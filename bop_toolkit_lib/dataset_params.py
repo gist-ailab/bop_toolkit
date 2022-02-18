@@ -86,6 +86,7 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'hb': list(range(1, 34)),  # Full HB dataset.
     'ycbv': list(range(1, 22)),
     'hope': list(range(1, 29)),
+    'kit': list(range(1, 120)),
   }[dataset_name]
 
   # ID's of objects with ambiguous views evaluated using the ADI pose error
@@ -103,6 +104,7 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'hbs': [10, 12, 18, 29],
     'hb': [6, 10, 11, 12, 13, 14, 18, 24, 29],
     'ycbv': [1, 13, 14, 16, 18, 19, 20, 21],
+    'kit': None, # Not defined yet.
     'hope': None,  # Not defined yet.
   }[dataset_name]
 
@@ -372,6 +374,20 @@ def get_split_params(datasets_path, dataset_name, split, split_type=None):
       p['depth_range'] = None  # Not calculated yet.
       p['azimuth_range'] = None  # Not calculated yet.
       p['elev_range'] = None  # Not calculated yet.
+
+  elif dataset_name == 'kit':
+      p['scene_ids'] = {
+        'train': list(range(1, 120)),
+        'val': list(range(1, 120)),
+        'test': list(range(1, 120))
+      }[split]
+
+      p['im_size'] = (640, 480)
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
 
   else:
     raise ValueError('Unknown BOP dataset ({}).'.format(dataset_name))
