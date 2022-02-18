@@ -86,7 +86,8 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'hb': list(range(1, 34)),  # Full HB dataset.
     'ycbv': list(range(1, 22)),
     'hope': list(range(1, 29)),
-    'kit': list(range(1, 120)),
+    'kit': list(range(1, 122)),
+    'bigbird': list(range(1, 111)),
   }[dataset_name]
 
   # ID's of objects with ambiguous views evaluated using the ADI pose error
@@ -105,6 +106,7 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'hb': [6, 10, 11, 12, 13, 14, 18, 24, 29],
     'ycbv': [1, 13, 14, 16, 18, 19, 20, 21],
     'kit': None, # Not defined yet.
+    'bigbird': None, # Not defined yet.
     'hope': None,  # Not defined yet.
   }[dataset_name]
 
@@ -377,9 +379,23 @@ def get_split_params(datasets_path, dataset_name, split, split_type=None):
 
   elif dataset_name == 'kit':
       p['scene_ids'] = {
-        'train': list(range(1, 120)),
-        'val': list(range(1, 120)),
-        'test': list(range(1, 120))
+        'train': list(range(1, 121)),
+        'val': list(range(1, 121)),
+        'test': list(range(1, 121))
+      }[split]
+
+      p['im_size'] = (640, 480)
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
+
+  elif dataset_name == 'bigbird':
+      p['scene_ids'] = {
+        'train': list(range(1, 111)),
+        'val': list(range(1, 111)),
+        'test': list(range(1, 111))
       }[split]
 
       p['im_size'] = (640, 480)
