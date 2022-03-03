@@ -19,13 +19,13 @@ from bop_toolkit_lib import misc
 ################################################################################
 p = {
   # See dataset_params.py for options.
-  'dataset': 'tudl',
+  'dataset': 'lmo',
 
   # Dataset split. Options: 'train', 'test'.
-  'dataset_split': 'train',
+  'dataset_split': 'test',
 
   # Dataset split type. Options: 'synt', 'real', None = default. See dataset_params.py for options.
-  'dataset_split_type': 'pbr',
+  'dataset_split_type': 'real',
 
   # bbox type. Options: 'modal', 'amodal'.
   'bbox_type': 'amodal',
@@ -112,8 +112,10 @@ for scene_id in dp_split['scene_ids']:
             else:
                 raise Exception('{} is not a valid bounding box type'.format(p['bbox_type']))
 
+            # annotation_info = pycoco_utils.create_annotation_info(
+            #     segmentation_id, im_id, category_info, binary_inst_mask_visib, bounding_box, tolerance=2, ignore=ignore_gt)
             annotation_info = pycoco_utils.create_annotation_info(
-                segmentation_id, im_id, category_info, binary_inst_mask_visib, bounding_box, tolerance=2, ignore=ignore_gt)
+                segmentation_id, im_id, category_info, binary_inst_mask_visib, bounding_box, tolerance=2)
 
             if annotation_info is not None:
                 coco_scene_output["annotations"].append(annotation_info)
