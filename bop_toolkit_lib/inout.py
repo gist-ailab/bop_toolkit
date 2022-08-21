@@ -345,6 +345,7 @@ def check_coco_results(path, version='bop22', ann_type='segm'):
     check_passed = False
     check_msg = 'Error when loading COCO results: {}'.format(e)
     misc.log(check_msg)
+    raise
 
   if version == 'bop22':
     try:
@@ -387,12 +388,12 @@ def save_coco_results(path, results, version='bop22'):
     coco_results = []
     for res in results:
       coco_results.append({'scene_id': res['scene_id'],
-                           'image_id':res['im_id'],
-                           'category_id':res['obj_id'],
-                           'score':res['score'],
-                           'bbox':res['bbox'].tolist() if 'bbox' in res else [],
-                           'segmentation':res['segmentation'] if 'segmentation' in res else {},
-                           'time':res['run_time'] if 'run_time' in res else -1})
+                           'image_id': res['im_id'],
+                           'category_id': res['obj_id'],
+                           'score': res['score'],
+                           'bbox': list(res['bbox']) if 'bbox' in res else [],
+                           'segmentation': res['segmentation'] if 'segmentation' in res else {},
+                           'time': res['run_time'] if 'run_time' in res else -1})
     save_json(path, coco_results)
   else:
     raise ValueError('Unknown version of BOP detection results.')
