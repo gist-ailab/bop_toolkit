@@ -19,19 +19,19 @@ from bop_toolkit_lib import misc
 ################################################################################
 p = {
   # See dataset_params.py for options.
-  'dataset': 'lmo',
+  'dataset': 'gist',
 
   # Dataset split. Options: 'train', 'test'.
-  'dataset_split': 'test',
+  'dataset_split': 'train',
 
   # Dataset split type. Options: 'synt', 'real', None = default. See dataset_params.py for options.
-  'dataset_split_type': 'real',
+  'dataset_split_type': None,
 
   # bbox type. Options: 'modal', 'amodal'.
   'bbox_type': 'amodal',
 
   # Folder containing the BOP datasets.
-  'datasets_path': config.datasets_path,
+  'datasets_path': '/home/seung/OccludedObjectDataset'
 
 }
 ################################################################################

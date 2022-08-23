@@ -71,6 +71,10 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
   :param model_type: Type of object models.
   :return: Dictionary with object model parameters for the specified dataset.
   """
+  gist_obj_ids = list(range(1, 84))
+  gist_obj_ids.remove(9)
+  gist_obj_ids.remove(55)
+  gist_obj_ids.remove(57)
   # Object ID's.
   obj_ids = {
     'lm': list(range(1, 16)),
@@ -88,7 +92,9 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'hope': list(range(1, 29)),
     'kit': list(range(1, 122)),
     'bigbird': list(range(1, 111)),
+    'gist': gist_obj_ids,
   }[dataset_name]
+
 
   # ID's of objects with ambiguous views evaluated using the ADI pose error
   # function (the others are evaluated using ADD). See Hodan et al. (ECCVW'16).
@@ -108,6 +114,7 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'kit': None, # Not defined yet.
     'bigbird': None, # Not defined yet.
     'hope': None,  # Not defined yet.
+    'gist': None,  # Not defined yet.
   }[dataset_name]
 
   # T-LESS includes two types of object models, CAD and reconstructed.
@@ -405,6 +412,19 @@ def get_split_params(datasets_path, dataset_name, split, split_type=None):
         p['azimuth_range'] = None  # Not calculated yet.
         p['elev_range'] = None  # Not calculated yet.
 
+  elif dataset_name == 'gist':
+      p['scene_ids'] = {
+        'train': list(range(1, 111)),
+        'val': list(range(1, 111)),
+        'test': list(range(1, 111))
+      }[split]
+
+      p['im_size'] = (1920, 1080)
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
   else:
     raise ValueError('Unknown BOP dataset ({}).'.format(dataset_name))
 
@@ -414,6 +434,9 @@ def get_split_params(datasets_path, dataset_name, split, split_type=None):
     if split_type == 'pbr':
       p['scene_ids'] = list(range(50))
     split_path += '_' + split_type
+
+  # if dataset_name == 'gist':
+    # base_path = join(datasets_path, 'data2_synthetic_source')
 
   p.update({
     # Path to the split directory.
