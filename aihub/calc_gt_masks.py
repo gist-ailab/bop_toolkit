@@ -49,7 +49,7 @@ dp_model = dataset_params.get_model_params(
   p['datasets_path'], p['dataset'], model_type)
 
 scene_ids = dataset_params.get_present_scene_ids(dp_split)
-scene_ids = [2, 11, 15, 38, 39]
+scene_ids = [11, 15, 38, 39]
 for scene_id in scene_ids:
 
   # Load scene GT.
@@ -57,6 +57,7 @@ for scene_id in scene_ids:
     scene_id=scene_id)
   scene_gt_path = scene_gt_path.replace(".json", "_{:06d}.json".format(scene_id))
   if not os.path.exists(scene_gt_path):
+    print(scene_gt_path)
     print("Skip scene {} (GT file not found).".format(scene_id))
     continue
   else:
@@ -89,8 +90,9 @@ for scene_id in scene_ids:
       continue
     elif camera_idx == 3:
       width, height = 3840, 2160
-    elif camera_idx == 0:
       continue
+    elif camera_idx == 0:
+      # continue
       width, height = 1920, 1200
 
     ren = renderer.create_renderer(
