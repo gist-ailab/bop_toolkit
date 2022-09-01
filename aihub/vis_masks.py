@@ -1,0 +1,27 @@
+import os
+import glob
+import cv2
+import imgviz
+import matplotlib.pyplot as plt
+import numpy as np
+scene_id = 0
+img_id = 12
+dataset_path = "/home/seung/OccludedObjectDataset/gist/train"
+
+scene_path = os.path.join(dataset_path, "{:06d}".format(scene_id))
+im_path = os.path.join(scene_path, "rgb/{:06d}.jpg".format(img_id))
+mask_paths = glob.glob(scene_path + "/mask/{:06d}_*.png".format(img_id))
+
+im = cv2.imread(im_path)
+masks = [np.array(cv2.imread(mask_path)[:, :, 0], dtype=bool) for mask_path in mask_paths]
+
+maskviz = imgviz.instances2rgb(im, masks=masks, labels=[int(x) for x in range(len(masks))], line_width=0, alpha=0.8)
+
+plt.figure(dpi=400)
+plt.imshow(maskviz)
+plt.axis("off")
+
+
+img = imgviz.io.pyplot_to_numpy()
+cv2.imwrite("/home/seung/img.png", img)
+plt.close()
