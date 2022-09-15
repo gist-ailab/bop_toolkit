@@ -44,7 +44,7 @@ for scene_id in scene_ids:
     with open(os.path.join(scene_folder_path, "keyframes.json"), 'w') as j_file:
         json.dump(im_ids_to_use, j_file)
     print("Scene {} done".format(scene_id))
-print("Done")
+print()
 
     
 
