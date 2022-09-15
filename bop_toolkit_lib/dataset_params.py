@@ -71,10 +71,12 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
   :param model_type: Type of object models.
   :return: Dictionary with object model parameters for the specified dataset.
   """
+
   gist_obj_ids = list(range(1, 84))
   gist_obj_ids.remove(9)
   gist_obj_ids.remove(55)
   gist_obj_ids.remove(57)
+
   # Object ID's.
   obj_ids = {
     'lm': list(range(1, 16)),
@@ -92,7 +94,11 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'hope': list(range(1, 29)),
     'kit': list(range(1, 122)),
     'bigbird': list(range(1, 111)),
-    'gist': gist_obj_ids,
+
+    'data2_real_source': gist_obj_ids,
+    'data2_syn_source': gist_obj_ids,
+    'data3_real_source': gist_obj_ids,
+    'data3_syn_source': gist_obj_ids, 
   }[dataset_name]
 
 
@@ -114,7 +120,11 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     'kit': None, # Not defined yet.
     'bigbird': None, # Not defined yet.
     'hope': None,  # Not defined yet.
-    'gist': None,  # Not defined yet.
+
+    'data2_real_source': None,
+    'data2_syn_source': None,
+    'data3_real_source': None,
+    'data3_syn_source': None,
   }[dataset_name]
 
   # T-LESS includes two types of object models, CAD and reconstructed.
@@ -147,6 +157,113 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     # Path to a file with meta information about the object models.
     'models_info_path': join(models_path, 'models_info.json')
   }
+
+  return p
+
+
+def get_split_params_clora(datasets_path, dataset_name, split, split_type=None):
+  """Returns parameters (camera params, paths etc.) for the specified dataset.
+
+  :param datasets_path: Path to a folder with datasets.
+  :param dataset_name: Name of the dataset for which to return the parameters.
+  :param split: Name of the dataset split ('train', 'val', 'test').
+  :param split_type: Name of the split type (e.g. for T-LESS, possible types of
+    the 'train' split are: 'primesense', 'render_reconst').
+  :return: Dictionary with parameters for the specified dataset split.
+  """
+  p = {
+    'name': dataset_name,
+    'split': split,
+    'split_type': split_type,
+    'base_path': join(datasets_path, dataset_name),
+
+    'depth_range': None,
+    'azimuth_range': None,
+    'elev_range': None,
+  }
+
+  rgb_ext = '.png'
+  gray_ext = '.png'
+  depth_ext = '.png'
+
+  if split_type == 'pbr':
+    # The photorealistic synthetic images are provided in the JPG format.
+    rgb_ext = '.jpg'
+  elif dataset_name == 'itodd':
+    gray_ext = '.tif'
+    depth_ext = '.tif'
+
+  p['im_modalities'] = ['rgb', 'depth']
+
+
+  if dataset_name == 'data2_real_source':
+      p['scene_ids'] = {
+        'train': list(range(1, 111)),
+        'val': list(range(1, 111)),
+        'test': list(range(1, 111)),
+        'all': list(range(1, 111)),
+      }[split]
+
+      p['im_size'] = (1920, 1080) #!TODO: check this
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
+
+  else:
+    raise ValueError('Unknown BOP dataset ({}).'.format(dataset_name))
+
+  base_path = join(datasets_path, dataset_name)
+  split_path = join(base_path, split)
+  # if split_type is not None:
+  #   if split_type == 'pbr':
+  #     p['scene_ids'] = list(range(50))
+  #   split_path += '_' + split_type
+
+
+
+  p.update({
+    # Path to the split directory.
+    'split_path': split_path,
+
+    # Path template to a file with per-image camera parameters.
+    'scene_camera_tpath': join(
+      split_path, '{scene_id:06d}', 'scene_camera.json'),
+
+    # Path template to a file with GT annotations.
+    'scene_gt_tpath': join(
+      split_path, '{scene_id:06d}', 'scene_gt_{scene_id:06d}.json'),
+
+    # Path template to a file with meta information about the GT annotations.
+    'scene_gt_info_tpath': join(
+      split_path, '{scene_id:06d}', 'scene_gt_info.json'),
+    
+    # Path template to a file with the coco GT annotations.
+    'scene_gt_coco_tpath': join(
+      split_path, '{scene_id:06d}', 'scene_gt_coco.json'),
+
+    # Path template to a gray image.
+    'gray_tpath': join(
+      split_path, '{scene_id:06d}', 'gray', '{im_id:06d}' + gray_ext),
+
+    # Path template to an RGB image.
+    'rgb_tpath': join(
+      split_path, '{scene_id:06d}', 'rgb', '{im_id:06d}' + rgb_ext),
+
+    # Path template to a depth image.
+    'depth_tpath': join(
+      split_path, '{scene_id:06d}', 'depth', '{im_id:06d}' + depth_ext),
+
+    # Path template to a mask of the full object silhouette.
+    'mask_tpath': join(
+      split_path, '{scene_id:06d}', 'mask', '{im_id:06d}_{gt_id:06d}.png'),
+
+    # Path template to a mask of the visible part of an object silhouette.
+    'mask_visib_tpath': join(
+      split_path, '{scene_id:06d}', 'mask_visib',
+      '{im_id:06d}_{gt_id:06d}.png'),
+  })
 
   return p
 
@@ -425,6 +542,21 @@ def get_split_params(datasets_path, dataset_name, split, split_type=None):
         p['depth_range'] = None  # Not calculated yet.
         p['azimuth_range'] = None  # Not calculated yet.
         p['elev_range'] = None  # Not calculated yet.
+
+  elif dataset_name == 'data2_source':
+      p['scene_ids'] = {
+        'train': list(range(1, 111)),
+        'val': list(range(1, 111)),
+        'test': list(range(1, 111))
+      }[split]
+
+      p['im_size'] = (1920, 1080)
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
+
   else:
     raise ValueError('Unknown BOP dataset ({}).'.format(dataset_name))
 
