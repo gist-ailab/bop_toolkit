@@ -22,7 +22,7 @@ import shutil
 dataset_root = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_raw"
 
 camera_names = ["rs_d415", "rs_d435", "azure_kinect"]
-bound = [[-1.0, 0.5], [-0.5, 0.5], [-0.05, 1.5]]
+bound = [[-1.0, 1.3], [-0.55, 0.55], [-0.05, 1.5]]
 
 
 
@@ -31,7 +31,7 @@ def i2s(num):
 
 
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
-
+scene_ids = [x for x in scene_ids if int(x) > 30]
 for scene_id in tqdm(scene_ids):
 
     scene_folder_path = os.path.join(dataset_root, i2s(scene_id))
