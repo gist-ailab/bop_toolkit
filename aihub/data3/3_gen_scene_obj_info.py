@@ -3,7 +3,7 @@ import os
 import glob
 
 
-output_path = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_raw"
+output_path = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_source"
 
 
 def i2s(num):
