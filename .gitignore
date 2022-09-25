@@ -1,3 +1,4 @@
+*.xlsx#
 .vscode/
 bop_renderer/
 data2/

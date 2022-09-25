@@ -6,6 +6,7 @@ dataset_root = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_raw"
 output_root = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_source"
 
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
+scene_ids = [x for x in scene_ids if int(x) > 60]
 for scene_id in scene_ids:
 
     scene_folder_path = os.path.join(dataset_root, "{0:06d}".format(scene_id))

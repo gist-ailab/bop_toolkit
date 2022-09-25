@@ -76,6 +76,7 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
   gist_obj_ids.remove(9)
   gist_obj_ids.remove(55)
   gist_obj_ids.remove(57)
+  gist_obj_ids.remove(68)
 
   # Object ID's.
   obj_ids = {
