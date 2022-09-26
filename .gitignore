@@ -1,7 +1,6 @@
 *.xlsx#
 .vscode/
 bop_renderer/
-data2/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
