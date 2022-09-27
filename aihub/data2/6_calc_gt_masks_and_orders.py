@@ -30,19 +30,22 @@ if __name__ == "__main__":
     # scene_ids = scene_ids[1:]
     for scene_id in tqdm(scene_ids):
         print("Process scene {}".format(scene_id))
-
         scene_gt = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
         if not os.path.exists(scene_gt):
             print("Skip scene {} (GT file not found).".format(scene_id))
             continue
 
         for im_id in tqdm(range(1, 53)):
+            print("Process scene {} image {}".format(scene_id, im_id))
             root_data = os.path.join(dataset_path, "{:06d}".format(scene_id))
             path_rgb = os.path.join(root_data, 'rgb', '{:06d}.png')
             path_depth = os.path.join(root_data, 'depth', '{:06d}.png')
             path_anno_cam = os.path.join(root_data, 'scene_camera.json')
             path_anno_obj = os.path.join(root_data, 'scene_gt_{:06d}.json')
-            
+            path_amodal_mask = os.path.join(root_data, 'mask')
+            path_visible_mask = os.path.join(root_data, 'mask_visib')
+            os.makedirs(path_amodal_mask, exist_ok=True)
+            os.makedirs(path_visible_mask, exist_ok=True)
 
             # load camera pose annotation
             with open(path_anno_cam.format()) as gt_file:
@@ -58,8 +61,6 @@ if __name__ == "__main__":
             obj_geometries = {}
             obj_depths = {}
             for i, obj in enumerate(anno_obj):
-                # print("... {} - {}_{}".format(i, obj['obj_id'], obj['inst_id']))
-                # get transform
                 translation = np.array(np.array(obj['cam_t_m2c']), dtype=np.float64) / 1000  # convert to meter
                 orientation = np.array(np.array(obj['cam_R_m2c']), dtype=np.float64)
                 transform = np.concatenate((orientation.reshape((3, 3)), translation.reshape(3, 1)), axis=1)
@@ -79,36 +80,35 @@ if __name__ == "__main__":
             # generate offscreen renderer
             rgb_img = cv2.imread(path_rgb.format(scene_id, im_id))
             img_h, img_w, img_c = rgb_img.shape
-            render_width = img_w
-            ratio = render_width / img_w
-            render_height = int(img_h * ratio)
-            print("Render size: {}x{}".format(render_width, render_height))
             render = o3d.visualization.rendering.OffscreenRenderer(
-                                                width=render_width, height=render_height)
+                                                width=img_w, height=img_h)
             # black background color
             render.scene.set_background([0, 0, 0, 1])
             render.scene.set_lighting(render.scene.LightingProfile.SOFT_SHADOWS, [0,0,0])
            
             # set camera intrinsic
             cam_K = anno_cam["cam_K"]
-            cam_K[0] = cam_K[0] * ratio
-            cam_K[2] = cam_K[2] * ratio
-            cam_K[4] = cam_K[4] * ratio
-            cam_K[5] = cam_K[5] * ratio
             intrinsic = np.array(cam_K).reshape((3, 3))
             extrinsic = np.array([[1, 0, 0, 0],
                                 [0, 1, 0 ,0],
                                 [0, 0, 1, 0],
                                 [0, 0, 0, 1]])
             render.setup_camera(intrinsic, extrinsic, img_w, img_h)
+
             # set camera pose
             center = [0, 0, 1]  # look_at target
             eye = [0, 0, 0]  # camera position
             up = [0, -1, 0]  # camera orientation
             render.scene.camera.look_at(center, eye, up)
-            render.scene.camera.set_projection(intrinsic, 0.01, 10.0, img_w, img_h)
+            render.scene.camera.set_projection(intrinsic, 0.01, 4.0, img_w, img_h)
 
-            # generate occlusion order (n x n matrix)
+            # generate object material
+            obj_mtl = o3d.visualization.rendering.MaterialRecord()
+            obj_mtl.base_color = [1.0, 1.0, 1.0, 1.0]
+            obj_mtl.shader = "defaultUnlit"
+            obj_mtl.point_size = 10.0
+
+            # initialize occlusion & depth order (n x n matrix)
             occ_mat = np.zeros((len(obj_geometries), len(obj_geometries)))
             depth_mat = np.zeros((len(obj_geometries), len(obj_geometries)))
             # overlap matrix for depth order
@@ -116,28 +116,75 @@ if __name__ == "__main__":
             obj_ids = list(obj_geometries.keys()) 
             obj_combs = ["{}_{}".format(i, j) for i in obj_ids for j in obj_ids]
 
-            # set background objects as black
+
+
+            # generate amodal masks for all objects
+            for obj_idx, obj_geometry in obj_geometries.items():
+                # set color (two target and the others)
+                color = [1, 0, 0]
+                obj_geometry.paint_uniform_color(color)
+                render.scene.add_geometry(
+                                "obj_{}".format(obj_idx), obj_geometry, 
+                                obj_mtl, add_downsampled_copy_for_fast_rendering=True)
+                mask_init = np.array(render.render_to_image())
+                newVal, loDiff, upDiff = 1, 1, 0
+                cnd_r = mask_init[:, :, 0] != 0
+                cnd_g = mask_init[:, :, 1] == 0
+                cnd_b = mask_init[:, :, 2] == 0
+                cnd_init = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
+                cnd_init = floodfill_cnd(cnd_init, newVal, loDiff, upDiff)
+                cv2.imwrite("{}/{:06d}_{:06d}.png".format(path_amodal_mask, im_id, obj_idx), cnd_init.astype(np.uint8) * 255)
+                render.scene.remove_geometry("obj_{}".format(obj_idx))
+
+            # generate visible masks for all objects
+            # firstly, load all objects 
             for obj_idx, obj_geometry in obj_geometries.items():
                 # generate object material
-                obj_mtl = o3d.visualization.rendering.MaterialRecord()
-                obj_mtl.base_color = [1.0, 1.0, 1.0, 1.0]
-                obj_mtl.shader = "defaultUnlit"
-                obj_mtl.point_size = 10.0
-                # set color (two target and the others)
                 color = [0, 0, 0]
                 obj_geometry.paint_uniform_color(color)
                 render.scene.add_geometry(
-                                "background_obj_{}".format(obj_idx), obj_geometry, 
+                                "obj_{}".format(obj_idx), obj_geometry, 
                                 obj_mtl, add_downsampled_copy_for_fast_rendering=True)
             
+            # secondly, generate visible masks
+            for obj_idx, obj_geometry in obj_geometries.items():
+                render.scene.remove_geometry("obj_{}".format(obj_idx))
+                # set red for the target object
+                color = [1, 0, 0]
+                obj_geometry.paint_uniform_color(color)
+                render.scene.add_geometry(
+                                "obj_{}".format(obj_idx), obj_geometry, 
+                                obj_mtl, add_downsampled_copy_for_fast_rendering=True)
+                mask_init = np.array(render.render_to_image())
+                newVal, loDiff, upDiff = 1, 1, 0
+                cnd_r = mask_init[:, :, 0] != 0
+                cnd_g = mask_init[:, :, 1] == 0
+                cnd_b = mask_init[:, :, 2] == 0
+                cnd_init = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
+                cnd_init = floodfill_cnd(cnd_init, newVal, loDiff, upDiff)
+                cv2.imwrite("{}/{:06d}_{:06d}.png".format(path_visible_mask, im_id, obj_idx), cnd_init.astype(np.uint8) * 255)
+                render.scene.remove_geometry("obj_{}".format(obj_idx))
+                color = [0, 0, 0]
+                obj_geometry.paint_uniform_color(color)
+                render.scene.add_geometry(
+                                "obj_{}".format(obj_idx), obj_geometry, 
+                                obj_mtl, add_downsampled_copy_for_fast_rendering=True)
+            # remove all objects
+            for obj_idx, obj_geometry in obj_geometries.items():
+                render.scene.remove_geometry("obj_{}".format(obj_idx))
+
             for obj_comb in tqdm(obj_combs):
+
                 idx_A, idx_B = list(map(int, obj_comb.split("_")))
-
                 if idx_A == idx_B: continue
-
                 # depth order
                 A_s, A_e, B_s, B_e = obj_depths[idx_A][0], obj_depths[idx_A][1], obj_depths[idx_B][0], obj_depths[idx_B][1]
-                if A_e < B_s:
+                if abs(A_s - B_s) < 0.01 and abs(A_e - B_e) < 0.01:
+                    depth_mat[idx_A, idx_B] = 1
+                    depth_mat[idx_B, idx_A] = 1
+                    is_overlap_matrix[idx_A, idx_B] = 1
+                    is_overlap_matrix[idx_B, idx_A] = 1
+                elif A_e < B_s:
                     depth_mat[idx_A, idx_B] = 1 # near, far
                 elif B_e < A_s:
                     depth_mat[idx_B, idx_A] = 1
@@ -151,26 +198,12 @@ if __name__ == "__main__":
                     print("ERROR: {} - {}".format(idx_A, idx_B))
                     exit()
 
-                # occlusion order
-                # check wheter both objects are not occluded by others, 
-                # obj_id_A = int(anno_obj[idx_A]['obj_id'])
-                # obj_id_B = int(anno_obj[idx_B]['obj_id'])
-                # amodal_mask_A = cv2.imread('{}/mask/{:06d}_{:06d}.png'.format(root_data, im_id, idx_A), cv2.IMREAD_GRAYSCALE)
-                # visible_mask_A = cv2.imread('{}/mask_visib/{:06d}_{:06d}.png'.format(root_data, im_id, idx_A), cv2.IMREAD_GRAYSCALE)
-                # if np.count_nonzero(visible_mask_A) / np.count_nonzero(amodal_mask_A) > 0.99:
-                #     continue
-                # amodal_mask_B = cv2.imread('{}/mask/{:06d}_{:06d}.png'.format(root_data, im_id, idx_B), cv2.IMREAD_GRAYSCALE)
-                # visible_mask_B = cv2.imread('{}/mask_visib/{:06d}_{:06d}.png'.format(root_data, im_id, idx_B), cv2.IMREAD_GRAYSCALE)
-                # if np.count_nonzero(visible_mask_B) / np.count_nonzero(amodal_mask_B) > 0.99:
-                #     continue
-
                 # set target i object as [1,0,0]
                 obj_geometry = obj_geometries[idx_A]
                 color = [1, 0, 0]
                 obj_geometry.paint_uniform_color(color)
-                render.scene.remove_geometry("background_obj_{}".format(idx_A))
                 render.scene.add_geometry(
-                                "target_obj_{}".format(idx_A), obj_geometry, 
+                                "obj_{}".format(idx_A), obj_geometry, 
                                 obj_mtl, add_downsampled_copy_for_fast_rendering=True)
                 mask_init = np.array(render.render_to_image())
                             # get depth images
@@ -181,9 +214,9 @@ if __name__ == "__main__":
                 obj_geometry.paint_uniform_color(color)
                 render.scene.remove_geometry("background_obj_{}".format(idx_B))
                 render.scene.add_geometry(
-                                "target_obj_{}".format(idx_B), obj_geometry, 
+                                "obj_{}".format(idx_B), obj_geometry, 
                                 obj_mtl, add_downsampled_copy_for_fast_rendering=True)
-                mask_sum = np.array(render.render_to_image())
+                mask_init = np.array(render.render_to_image())
 
                 # count area
                 newVal, loDiff, upDiff = 1, 1, 0
@@ -193,15 +226,11 @@ if __name__ == "__main__":
                 cnd_init = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
                 cnd_init = floodfill_cnd(cnd_init, newVal, loDiff, upDiff)
 
-                cnd_r = mask_sum[:, :, 0] != 0
-                cnd_g = mask_sum[:, :, 1] == 0
-                cnd_b = mask_sum[:, :, 2] == 0
+                cnd_r = mask_init[:, :, 0] != 0
+                cnd_g = mask_init[:, :, 1] == 0
+                cnd_b = mask_init[:, :, 2] == 0
                 cnd_sum = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
                 cnd_sum = floodfill_cnd(cnd_sum, newVal, loDiff, upDiff)
-                cv2.imwrite("/home/seung/tmp/mask_init_{}_{}.png".format(idx_A, idx_B), cnd_init.astype(np.uint8)*255)
-                cv2.imwrite("/home/seung/tmp/mask_sum_{}_{}.png".format(idx_A, idx_B), cnd_sum.astype(np.uint8)*255)
-                # cv2.imwrite("mask_init.png", cnd_init.astype(np.uint8)*255)
-                # cv2.imwrite("mask_sum.png", cnd_sum.astype(np.uint8)*255)
 
                 num_init = np.count_nonzero(cnd_init)
                 num_sum = np.count_nonzero(cnd_sum)
@@ -216,19 +245,9 @@ if __name__ == "__main__":
                 
                 
                 # revert the scene
-                render.scene.remove_geometry("target_obj_{}".format(idx_A))
-                render.scene.remove_geometry("target_obj_{}".format(idx_B))
-                obj_geometry = obj_geometries[idx_A]
-                color = [0, 0, 0]
-                obj_geometry.paint_uniform_color(color)
-                render.scene.add_geometry(
-                                "background_obj_{}".format(idx_A), obj_geometry, 
-                                obj_mtl, add_downsampled_copy_for_fast_rendering=True)
-                obj_geometry = obj_geometries[idx_B]
-                obj_geometry.paint_uniform_color(color)
-                render.scene.add_geometry(
-                                "background_obj_{}".format(idx_B), obj_geometry, 
-                                obj_mtl, add_downsampled_copy_for_fast_rendering=True)
+                render.scene.remove_geometry("obj_{}".format(idx_A))
+                render.scene.remove_geometry("obj_{}".format(idx_B))
+          
             render.scene.clear_geometry()
 
             if os.path.exists(root_data + "/occ_mat.json"):
