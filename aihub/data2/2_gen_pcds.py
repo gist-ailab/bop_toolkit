@@ -46,7 +46,8 @@ scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os
 # scene_ids = [x for x in scene_ids if x in shelf_scene_ids]
 # scene_ids = [x for x in scene_ids if x in table_scene_ids]
 # scene_ids = [3, 4, 13, 22, 29, 34, 35, 41, 42, 43, 44, 45, 46, 47, 48, 53, 54, 55, 56, 61, 62, 63, 64, 65, 66, 67, 68, 73, 74, 75, 76, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200]
-scene_ids = [x for x in scene_ids if int(x) >  360]
+# scene_ids = [x for x in scene_ids if int(x) >  360]
+scene_ids = [361, 362, 363, 364, 365, 366, 367, 368, 380]
 env = "table"
 
 for scene_id in tqdm(scene_ids):

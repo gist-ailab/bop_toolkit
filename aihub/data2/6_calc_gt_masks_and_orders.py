@@ -9,12 +9,8 @@ from tqdm import tqdm
 import sys
 sys.path.append('/home/seung/Workspace/papers/2022/clora/bop_renderer/build')
 
-def floodfill_cnd(cnd_target, newVal, loDiff, upDiff):
-    img_h, img_w = cnd_target.shape
-    cnd_bg = np.zeros((img_h+2, img_w+2), dtype=np.uint8)
-    cv2.floodFill(cnd_target.copy().astype(np.uint8), cnd_bg, (0,0), newVal, loDiff, upDiff)
-    cnd_bg = cnd_bg[1:img_h+1, 1:img_w+1].astype(bool)
-    cnd_target = 1 - cnd_bg.copy()
+def fill_hole(cnd_target):
+    cnd_target = cv2.morphologyEx(cnd_target.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3,3), np.uint8), None, None, 1, cv2.BORDER_REFLECT101)
     return cnd_target
 
 
@@ -27,7 +23,7 @@ if __name__ == "__main__":
     model_path = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/models"
     # path
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
-    # scene_ids = scene_ids[1:]
+    scene_ids = [x for x in scene_ids if 100 < x < 151]
     for scene_id in tqdm(scene_ids):
         print("Process scene {}".format(scene_id))
         scene_gt = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
@@ -78,7 +74,7 @@ if __name__ == "__main__":
                 obj_depths[i] = [obj_geometry.get_min_bound()[2], obj_geometry.get_max_bound()[2]]
 
             # generate offscreen renderer
-            rgb_img = cv2.imread(path_rgb.format(scene_id, im_id))
+            rgb_img = cv2.imread(path_rgb.format(im_id))
             img_h, img_w, img_c = rgb_img.shape
             render = o3d.visualization.rendering.OffscreenRenderer(
                                                 width=img_w, height=img_h)
@@ -127,12 +123,12 @@ if __name__ == "__main__":
                                 "obj_{}".format(obj_idx), obj_geometry, 
                                 obj_mtl, add_downsampled_copy_for_fast_rendering=True)
                 mask_init = np.array(render.render_to_image())
-                newVal, loDiff, upDiff = 1, 1, 0
+                
                 cnd_r = mask_init[:, :, 0] != 0
                 cnd_g = mask_init[:, :, 1] == 0
                 cnd_b = mask_init[:, :, 2] == 0
                 cnd_init = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
-                cnd_init = floodfill_cnd(cnd_init, newVal, loDiff, upDiff)
+                cnd_init = fill_hole(cnd_init)
                 cv2.imwrite("{}/{:06d}_{:06d}.png".format(path_amodal_mask, im_id, obj_idx), cnd_init.astype(np.uint8) * 255)
                 render.scene.remove_geometry("obj_{}".format(obj_idx))
 
@@ -156,12 +152,12 @@ if __name__ == "__main__":
                                 "obj_{}".format(obj_idx), obj_geometry, 
                                 obj_mtl, add_downsampled_copy_for_fast_rendering=True)
                 mask_init = np.array(render.render_to_image())
-                newVal, loDiff, upDiff = 1, 1, 0
+                
                 cnd_r = mask_init[:, :, 0] != 0
                 cnd_g = mask_init[:, :, 1] == 0
                 cnd_b = mask_init[:, :, 2] == 0
                 cnd_init = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
-                cnd_init = floodfill_cnd(cnd_init, newVal, loDiff, upDiff)
+                cnd_init = fill_hole(cnd_init)
                 cv2.imwrite("{}/{:06d}_{:06d}.png".format(path_visible_mask, im_id, obj_idx), cnd_init.astype(np.uint8) * 255)
                 render.scene.remove_geometry("obj_{}".format(obj_idx))
                 color = [0, 0, 0]
@@ -205,32 +201,31 @@ if __name__ == "__main__":
                 render.scene.add_geometry(
                                 "obj_{}".format(idx_A), obj_geometry, 
                                 obj_mtl, add_downsampled_copy_for_fast_rendering=True)
-                mask_init = np.array(render.render_to_image())
+                mask_A = np.array(render.render_to_image())
                             # get depth images
 
                 # set target j object as [0,0,1]
                 obj_geometry = obj_geometries[idx_B]
-                color = [0, 0, 1]
+                color = [0, 0, 0]
                 obj_geometry.paint_uniform_color(color)
-                render.scene.remove_geometry("background_obj_{}".format(idx_B))
                 render.scene.add_geometry(
                                 "obj_{}".format(idx_B), obj_geometry, 
                                 obj_mtl, add_downsampled_copy_for_fast_rendering=True)
-                mask_init = np.array(render.render_to_image())
+                mask_A_B = np.array(render.render_to_image())
 
                 # count area
-                newVal, loDiff, upDiff = 1, 1, 0
-                cnd_r = mask_init[:, :, 0] != 0
-                cnd_g = mask_init[:, :, 1] == 0
-                cnd_b = mask_init[:, :, 2] == 0
+                
+                cnd_r = mask_A[:, :, 0] != 0
+                cnd_g = mask_A[:, :, 1] == 0
+                cnd_b = mask_A[:, :, 2] == 0
                 cnd_init = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
-                cnd_init = floodfill_cnd(cnd_init, newVal, loDiff, upDiff)
+                cnd_init = fill_hole(cnd_init)
 
-                cnd_r = mask_init[:, :, 0] != 0
-                cnd_g = mask_init[:, :, 1] == 0
-                cnd_b = mask_init[:, :, 2] == 0
+                cnd_r = mask_A_B[:, :, 0] != 0
+                cnd_g = mask_A_B[:, :, 1] == 0
+                cnd_b = mask_A_B[:, :, 2] == 0
                 cnd_sum = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
-                cnd_sum = floodfill_cnd(cnd_sum, newVal, loDiff, upDiff)
+                cnd_sum = fill_hole(cnd_sum)
 
                 num_init = np.count_nonzero(cnd_init)
                 num_sum = np.count_nonzero(cnd_sum)
@@ -241,7 +236,7 @@ if __name__ == "__main__":
 
                 if diff_rate > 0.05:
                     # print("OBJ {} - {} : {:.3f}%".format(idx_A, idx_B, diff_rate*100))
-                    occ_mat[idx_A, idx_B] = 1
+                    occ_mat[idx_B, idx_A] = 1
                 
                 
                 # revert the scene

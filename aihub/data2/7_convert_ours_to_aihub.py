@@ -102,6 +102,7 @@ for scene_id, scene_type, environment, background in zip(scene_ids, scene_types,
 
 
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
+scene_ids = [1]
 for scene_id in tqdm(scene_ids):
 
     scene_path = os.path.join(dataset_root, "{0:06d}".format(scene_id))
@@ -212,7 +213,10 @@ for scene_id in tqdm(scene_ids):
         for idx, obj_gt in enumerate(scene_gt[str(im_id)]):
             amodal_mask = cv2.imread(scene_path + "/mask/{:06d}_{:06d}.png".format(im_id, idx))[:, :, 0]
             visible_mask = cv2.imread(scene_path + "/mask_visib/{:06d}_{:06d}.png".format(im_id, idx))[:, :, 0]
-            invisible_mask = cv2.bitwise_xor(amodal_mask, visible_mask)
+            if np.sum(visible_mask) / np.sum(amodal_mask) > 0.95:
+                invisible_mask = np.zeros_like(amodal_mask)
+            else:
+                invisible_mask = cv2.bitwise_xor(amodal_mask, visible_mask)
             target_occlusion_order = [x for x in occlusion_order if int(idx) in [int(x) for x in x["order"].split("&")[0].split("<")]]
             target_depth_order = [x for x in depth_order if int(idx) in [int(x) for x in x["order"].split("<")]]
             aihub_gt["annotation"].append({
