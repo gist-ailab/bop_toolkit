@@ -3,7 +3,7 @@ import os
 import glob
 
 
-input_json_path = "assets/schedule_scene_301-390_220926.json"
+input_json_path = "assets/scene_info.json"
 output_path = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
 

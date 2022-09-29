@@ -8,8 +8,8 @@ import json
 if __name__ == '__main__':
 
     # file name of json to save
-    save_file = 'scene_301-390_220926.json' 
-    sch_file = '/home/seung/test.xlsx'
+    save_file = 'assets/scene_info.json' 
+    sch_file = 'assets/scene_info.xlsx'
 
     sch_data = pd.read_excel(sch_file, engine='openpyxl')
 
@@ -32,7 +32,10 @@ if __name__ == '__main__':
                 obj_id = int(obj_id)
             # print("... {} - {}".format(obj_inst_num, obj_id), type(obj_id))
             obj_ids.append(obj_id)
-
+        try: 
+            int(scene_id)
+        except:
+            continue
         # parsing data
         scene_id = str(scene_id)
         json_data[scene_id] = []
