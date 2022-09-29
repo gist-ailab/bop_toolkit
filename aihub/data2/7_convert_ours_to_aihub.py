@@ -15,8 +15,18 @@ def mask2rle(im):
     im = np.array(im, order='F', dtype=bool)
     rle = m.encode(im)
     rle['counts'] = rle['counts'].decode('ascii')
+    rle = rle['counts']
     return rle
 
+
+is_real = False
+scene_info_path = '/home/seung/Workspace/papers/2022/clora/bop_toolkit/assets/scene_info.xlsx'
+labeling_data_info_path = '/home/seung/Workspace/papers/2022/clora/bop_toolkit/assets/labeling_data_info.xlsx'
+if is_real:
+    dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
+else:
+    dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
+aihub_path = "/home/seung/OccludedObjectDataset/aihub"
 
 env_to_background = {
     "bin":
@@ -55,10 +65,6 @@ object_set_to_subdir = {
     'apc_all': ['APC', 'APC_전체'],
 }
 
-scene_info_path = '/home/seung/Workspace/papers/2022/clora/bop_toolkit/assets/scene_info.xlsx'
-labeling_data_info_path = '/home/seung/Workspace/papers/2022/clora/bop_toolkit/assets/labeling_data_info.xlsx'
-dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
-aihub_path = "/home/seung/OccludedObjectDataset/aihub"
 
 scene_info = pd.read_excel(scene_info_path, engine='openpyxl')
 labeling_data_info = pd.read_excel(labeling_data_info_path, engine='openpyxl')
@@ -79,50 +85,66 @@ for obj_id, super_class_id, sub_class_id, semantic_class_id in zip(object_ids, s
     }
 
 # get scene info
-scene_ids = scene_info['노란색'][1:]
-scene_types = scene_info['촬영 2순위'][1:]
-environments = scene_info['촬영 1순위'][1:]
-backgrounds = scene_info['주황색'][1:]
+if is_real:
+    scene_ids = scene_info['노란색'][1:]
+    scene_types = scene_info['촬영 2순위'][1:]
+    environments = scene_info['촬영 1순위'][1:]
+    backgrounds = scene_info['주황색'][1:]
 
-scene_id_to_scene_info = {}
-for scene_id, scene_type, environment, background in zip(scene_ids, scene_types, environments, backgrounds):
-    scene_type = scene_type.lower().replace("-", "_")
-    object_set = scene_type.split("_")[:2]
-    object_set = "_".join(object_set)
-    object_set = object_set.replace("object_all", "public_all")
-    split = scene_type.split("_")[-1]
-    background = background[0] if isinstance(background, str) else background
-    scene_id_to_scene_info[int(scene_id)] = {
-        "object_set": object_set, # 1.1 
-        "scene_id": int(scene_id), # 1.2
-        "environment": environment.lower().replace("-", ""), # 1.4
-        "background": env_to_background[environment.split('-')[0].lower()][str(background)], # 1.5
-        "split": split, # 1.6
-    }
+    scene_id_to_scene_info = {}
+    for scene_id, scene_type, environment, background in zip(scene_ids, scene_types, environments, backgrounds):
+        scene_type = scene_type.lower().replace("-", "_")
+        object_set = scene_type.split("_")[:2]
+        object_set = "_".join(object_set)
+        object_set = object_set.replace("object_all", "public_all")
+        split = scene_type.split("_")[-1]
+        background = background[0] if isinstance(background, str) else background
+        scene_id_to_scene_info[int(scene_id)] = {
+            "object_set": object_set, # 1.1 
+            "scene_id": int(scene_id), # 1.2
+            "environment": environment.lower().replace("-", ""), # 1.4
+            "background": env_to_background[environment.split('-')[0].lower()][str(background)], # 1.5
+            "split": split, # 1.6
+        }
 
 
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
-scene_ids = [1]
+
 for scene_id in tqdm(scene_ids):
 
     scene_path = os.path.join(dataset_root, "{0:06d}".format(scene_id))
-    scene_gt_file = os.path.join(dataset_root, "{0:06d}".format(scene_id), "scene_gt_{0:06d}.json".format(scene_id))
+    if is_real:
+        scene_gt_file = os.path.join(dataset_root, "{0:06d}".format(scene_id), "scene_gt_{0:06d}.json".format(scene_id))
+    else:
+        scene_gt_file = os.path.join(dataset_root, "{0:06d}".format(scene_id), "scene_gt.json")
     if not os.path.exists(scene_gt_file):
         print("scene_gt_file not exists: ", scene_gt_file)
         continue
     scene_gt = json.load(open(scene_gt_file, 'r'))
-    object_set = scene_id_to_scene_info[int(scene_id)]['object_set']
+    if not is_real:
+        object_set = "ycb_all"
+    else:
+        object_set = scene_id_to_scene_info[int(scene_id)]['object_set']
     sub_dir_1, sub_dir_2 =  object_set_to_subdir[object_set]
-    sub_dir_1_path = os.path.join(aihub_path, '원천데이터', '다수물체가림', '실제', sub_dir_1)
+    dir_name = "실제" if is_real else "가상"
+    sub_dir_1_path = os.path.join(aihub_path, '원천데이터', '다수물체가림', dir_name, sub_dir_1)
     sub_dir_2_path = os.path.join(sub_dir_1_path, sub_dir_2)
     os.makedirs(sub_dir_1_path, exist_ok=True)
     os.makedirs(sub_dir_2_path, exist_ok=True)
 
     new_scene_path = os.path.join(sub_dir_2_path, "{0:06d}".format(scene_id))
     os.makedirs(new_scene_path, exist_ok=True)
-    gt_folder_path = new_scene_path + "/gt"
-    if not os.path.exists(gt_folder_path):
-        os.makedirs(gt_folder_path)
+    new_rgb_path = os.path.join(new_scene_path, "rgb")
+    os.makedirs(new_rgb_path, exist_ok=True)
+    new_depth_path = os.path.join(new_scene_path, "depth")
+    os.makedirs(new_depth_path, exist_ok=True)
+    new_pcd_path = os.path.join(new_scene_path, "pcd")
+    os.makedirs(new_pcd_path, exist_ok=True)
+    new_gt_path = os.path.join(new_scene_path, "gt")
+    os.makedirs(new_gt_path, exist_ok=True)
+
+
+
 
     # occlusion & depth order info
     with open(scene_path + "/occ_mat.json", "r") as f:
@@ -131,17 +153,43 @@ for scene_id in tqdm(scene_ids):
         depth_mats = json.load(f)
     with open(scene_path + "/is_overlap_matrix.json", "r") as f:
         is_overlap_mats = json.load(f)
+    
+
 
     for im_id in tqdm(range(1, 53)):
         aihub_gt = {}
         # 1. scene_info
-        aihub_gt["scene_info"] = scene_id_to_scene_info[int(scene_id)]
-        aihub_gt["scene_info"]['image_id'] = int(im_id) # 1.3
+        if is_real:
+            aihub_gt["scene_info"] = {
+                    "object_set": scene_id_to_scene_info[int(scene_id)]["object_set"], # 1.1 
+                    "scene_id": scene_id_to_scene_info[int(scene_id)]["scene_id"], # 1.2
+                    "image_id": int(im_id), # 1.3
+                    "environment": scene_id_to_scene_info[int(scene_id)]["environment"], # 1.4
+                    "background": scene_id_to_scene_info[int(scene_id)]["background"], # 1.5
+                    "split": scene_id_to_scene_info[int(scene_id)]["split"], # 1.6
+                }
+        else:
+            background_info_path = os.path.join(dataset_root, "{0:06d}".format(scene_id), "background.json")
+            with open(background_info_path, "r") as f:
+                background_info = json.load(f)
+            if scene_id % 10 == 9:
+                split = "test" 
+            elif scene_id % 10 == 8:
+                split = "val"
+            else:
+                split = "train"
+            aihub_gt["scene_info"] = {
+                    "object_set": "ycb_all", # 1.1 
+                    "scene_id": int(scene_id), # 1.2
+                    "image_id": int(im_id), # 1.3
+                    "environment": "floor", # 1.4
+                    "background": background_info[str(scene_id)], # 1.5
+                    "split": split, # 1.6
+                }
 
         scene_camera_path = scene_path + "/scene_camera.json"
         with open(scene_camera_path, "r") as f:
             scene_camera = json.load(f)
-
 
         camera_idx = im_id % 4
         if camera_idx == 1:
@@ -161,9 +209,9 @@ for scene_id in tqdm(scene_ids):
         aihub_gt["camera_info"] = { 
             'cam_R_w2c': scene_camera[str(im_id)]["cam_R_w2c"], # 2.1 
             'cam_t_w2c': scene_camera[str(im_id)]["cam_t_w2c"], # 2.2
-            "camera_intrinsic": scene_camera[str(im_id)]["cam_K"], # 2.3
+            "cam_K": scene_camera[str(im_id)]["cam_K"], # 2.3
             'depth_scale': scene_camera[str(im_id)]["depth_scale"], # 2.4
-            "camera_resolution": [height, width], # 2.5
+            "resolution": [height, width], # 2.5
             "camera_type": camera_type, # 2.6
         }
 
@@ -219,6 +267,8 @@ for scene_id in tqdm(scene_ids):
                 invisible_mask = cv2.bitwise_xor(amodal_mask, visible_mask)
             target_occlusion_order = [x for x in occlusion_order if int(idx) in [int(x) for x in x["order"].split("&")[0].split("<")]]
             target_depth_order = [x for x in depth_order if int(idx) in [int(x) for x in x["order"].split("<")]]
+            if "inst_id" not in obj_gt.keys():
+                obj_gt["inst_id"] = 1
             aihub_gt["annotation"].append({
                 "object_id": obj_gt["obj_id"], # 3.1
                 "instance_id": obj_gt["inst_id"], # 3.2
@@ -231,15 +281,19 @@ for scene_id in tqdm(scene_ids):
                 "depth_order": target_depth_order,
             })
 
-        with open(gt_folder_path + "/{:06d}.json".format(im_id), "w") as f:
+        
+        real_or_syn = 2 if is_real else 1
+        new_file_name = "H2_{}_{:06d}_{:06d}".format(real_or_syn, scene_id, im_id)
+        if is_real:
+            shutil.copy(scene_path + "/rgb/{:06d}.png".format(im_id), new_rgb_path + "/{}.png".format(new_file_name))
+        else:
+            shutil.copy(scene_path + "/rgb/{:06d}.jpg".format(im_id), new_rgb_path + "/{}.jpg".format(new_file_name))
+        shutil.copy(scene_path + "/depth/{:06d}.png".format(im_id), new_depth_path + "/{}.png".format(new_file_name))
+        shutil.copy(scene_path + "/pcd/{:06d}.pcd".format(im_id), new_pcd_path + "/{}.pcd".format(new_file_name))
+        with open(new_gt_path + "/{}.json".format(new_file_name), "w") as f:
             json.dump(aihub_gt, f, indent=4, ensure_ascii=False)
 
-    # copy files
-    ign = shutil.ignore_patterns("-*.png", "-*.pcd", "000000.png", "000000.pcd")
-    shutil.copytree(scene_path + "/rgb", new_scene_path + "/rgb", ignore=ign)
-    shutil.copytree(scene_path + "/depth", new_scene_path + "/depth", ignore=ign)
-    shutil.copytree(scene_path + "/pcd", new_scene_path + "/pcd", ignore=ign)
-    exit()
+
 
 
 
