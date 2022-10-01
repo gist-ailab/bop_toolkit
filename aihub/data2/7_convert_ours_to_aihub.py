@@ -210,7 +210,7 @@ for scene_id in tqdm(scene_ids):
             'cam_R_w2c': scene_camera[str(im_id)]["cam_R_w2c"], # 2.1 
             'cam_t_w2c': scene_camera[str(im_id)]["cam_t_w2c"], # 2.2
             "cam_K": scene_camera[str(im_id)]["cam_K"], # 2.3
-            'depth_scale': scene_camera[str(im_id)]["depth_scale"], # 2.4
+            'depth_scale': float(scene_camera[str(im_id)]["depth_scale"]), # 2.4
             "resolution": [height, width], # 2.5
             "camera_type": camera_type, # 2.6
         }

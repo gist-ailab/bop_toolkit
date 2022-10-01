@@ -15,10 +15,10 @@ def i2s(num):
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
 scene_ids = [x for x in scene_ids if x > 300]
 
-scene_ids = [420]
+scene_ids = [374]
 
 calibrated_results = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/calibrated_results.json"
-world_cam_poses = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/world_cam_poses_shelf4.json"
+world_cam_poses = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/world_cam_poses_table.json"
 with open(world_cam_poses, 'r') as f:
     world_cam_poses = json.load(f)
 calibrated_results = json.load(open(calibrated_results))

@@ -3,10 +3,8 @@ import json
 import numpy as np
 import open3d as o3d
 import os
-import pickle
-import time
 from tqdm import tqdm
-import sys
+import argparse
 
 def fill_hole(cnd_target):
     cnd_target = cv2.morphologyEx(cnd_target.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3,3), np.uint8), None, None, 1, cv2.BORDER_REFLECT101)
@@ -15,9 +13,22 @@ def fill_hole(cnd_target):
 
 if __name__ == "__main__":
 
+
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--is_real', action="store_true")
+    parser.add_argument('--n_scenes', type=int, help='number of total scenes to be processed')
+    parser.add_argument('--n_proc', type=int, help='number of process')
+    parser.add_argument('--proc', type=int, help='process id')
+
+    args = parser.parse_args()
+
+    is_real = args.is_real
+    n_scenes = args.n_scenes
+    n_proc = args.n_proc
+    proc = args.proc
+
     model_path = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/models"
 
-    is_real = False
     if is_real:
         dataset_path = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
         img_id_range = range(1, 53)
@@ -25,11 +36,13 @@ if __name__ == "__main__":
         dataset_path = "/home/seung/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
         img_id_range = range(0, 1000)
 
-
     # path
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
+    scene_target_i = (n_scenes // n_proc) * (proc - 1)
+    scene_target_f = (n_scenes // n_proc) * proc
+    scene_ids = scene_ids[:n_scenes][scene_target_i:scene_target_f]
     for scene_id in tqdm(scene_ids):
-        print("Process scene {}".format(scene_id))
+        print("Process scene {} [from {} to {}]".format(scene_id, scene_target_i, scene_target_f))
         if is_real:
             scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
         else:
