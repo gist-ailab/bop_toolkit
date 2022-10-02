@@ -1,0 +1,27 @@
+# Author: Tomas Hodan (hodantom@cmp.felk.cvut.cz)
+# Center for Machine Perception, Czech Technical University in Prague
+
+"""'Uniformly' resamples and decimates 3D object models for evaluation.
+Note: Models of some T-LESS objects were processed by Blender (using the Remesh
+modifier).
+"""
+
+import os
+import glob
+import open3d as o3d
+import numpy as np
+
+input_model_path = "/home/seung/OccludedObjectDataset/ours/data1/models_original"
+output_model_path = "/home/seung/OccludedObjectDataset/ours/data1/models"
+
+# Attributes to save for the output models.
+attrs_to_save = []
+
+# Process models of all objects in the selected dataset.
+for model_in_path in glob.glob(input_model_path + "/*.ply"):
+  
+  model_out_path = os.path.join(output_model_path, os.path.basename(model_in_path))
+  pcd = o3d.io.read_point_cloud(model_in_path)
+  print(np.asarray(pcd.points))
+  pcd = pcd.voxel_down_sample(voxel_size=0.0001)
+  o3d.io.write_point_cloud(model_out_path, pcd)

@@ -81,7 +81,7 @@ if __name__ == "__main__":
                                                 width=img_w, height=img_h)
             # black background color
             render.scene.set_background([0, 0, 0, 1])
-            render.scene.set_lighting(render.scene.LightingProfile.SOFT_SHADOWS, [0,0,0])
+            render.scene.set_lighting(render.scene.LightingProfile.NO_SHADOWS, [0,0,0])
            
             # set camera intrinsic
             cam_K = anno_cam["cam_K"]

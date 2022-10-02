@@ -1,8 +1,6 @@
-from genericpath import exists
 from re import I
 import shutil
 import shutil
-from unicodedata import bidirectional
 from tqdm import tqdm
 import os, glob
 import pandas as pd
@@ -21,7 +19,6 @@ def mask2rle(im):
 
 is_real = False
 scene_info_path = '/home/seung/Workspace/papers/2022/clora/bop_toolkit/assets/scene_info.xlsx'
-labeling_data_info_path = '/home/seung/Workspace/papers/2022/clora/bop_toolkit/assets/labeling_data_info.xlsx'
 if is_real:
     dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
 else:
@@ -67,29 +64,14 @@ object_set_to_subdir = {
 
 
 scene_info = pd.read_excel(scene_info_path, engine='openpyxl')
-labeling_data_info = pd.read_excel(labeling_data_info_path, engine='openpyxl')
 
-# get labeling data info
-super_class_ids = list(labeling_data_info['Unnamed: 6'][1:])
-sub_class_ids = list(labeling_data_info['Unnamed: 7'][1:])
-semantic_class_ids = list(labeling_data_info['Unnamed: 8'][1:])
-object_ids = list(labeling_data_info['Unnamed: 9'][1:])
-
-object_id_to_class_id = {}
-for obj_id, super_class_id, sub_class_id, semantic_class_id in zip(object_ids, super_class_ids, sub_class_ids, semantic_class_ids):
-    object_id_to_class_id[int(obj_id)] = {
-        "super_class": int(super_class_id),
-        "sub_class": int(sub_class_id),
-        "semantic_class": int(semantic_class_id),
-        "object_id": int(obj_id)
-    }
 
 # get scene info
 if is_real:
-    scene_ids = scene_info['노란색'][1:]
-    scene_types = scene_info['촬영 2순위'][1:]
-    environments = scene_info['촬영 1순위'][1:]
-    backgrounds = scene_info['주황색'][1:]
+    scene_ids = scene_info['scene_number']
+    scene_types = scene_info['scene_type']
+    environments = scene_info['환경']
+    backgrounds = scene_info['배경']
 
     scene_id_to_scene_info = {}
     for scene_id, scene_type, environment, background in zip(scene_ids, scene_types, environments, backgrounds):
