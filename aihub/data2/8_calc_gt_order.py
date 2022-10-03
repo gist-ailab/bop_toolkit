@@ -69,4 +69,3 @@ if __name__ == "__main__":
                 os.system("/home/seung/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_order.py --is_real --scene_id {} --im_id {}".format(scene_id, im_id))
             else:
                 os.system("/home/seung/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --scene_id {} --im_id {}".format(scene_id, im_id))
-            exit()
