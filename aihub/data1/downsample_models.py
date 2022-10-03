@@ -10,6 +10,7 @@ import os
 import glob
 import open3d as o3d
 import numpy as np
+from tqdm import tqdm
 
 input_model_path = "/home/seung/OccludedObjectDataset/ours/data1/models_original"
 output_model_path = "/home/seung/OccludedObjectDataset/ours/data1/models"
@@ -18,10 +19,9 @@ output_model_path = "/home/seung/OccludedObjectDataset/ours/data1/models"
 attrs_to_save = []
 
 # Process models of all objects in the selected dataset.
-for model_in_path in glob.glob(input_model_path + "/*.ply"):
-  
+for model_in_path in tqdm(glob.glob(input_model_path + "/*.ply")):
+  print(model_in_path)
   model_out_path = os.path.join(output_model_path, os.path.basename(model_in_path))
   pcd = o3d.io.read_point_cloud(model_in_path)
-  print(np.asarray(pcd.points))
   pcd = pcd.voxel_down_sample(voxel_size=0.0001)
   o3d.io.write_point_cloud(model_out_path, pcd)

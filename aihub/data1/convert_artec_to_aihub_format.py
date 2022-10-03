@@ -5,10 +5,10 @@ from tqdm import tqdm
 
 
 artec_models_path = "/home/seung/OccludedObjectDataset/ours/data1/artec"
-aihub_models_path = "/home/seung/OccludedObjectDataset/ours/data1/models"
+aihub_models_path = "/home/seung/OccludedObjectDataset/ours/data1/models_original"
 
 
-for obj_path in tqdm(glob.glob(artec_models_path + "/*.obj")):
+for obj_path in tqdm(sorted(glob.glob(artec_models_path + "/*.obj"))):
 
     id = int(os.path.basename(obj_path).replace(".obj", ""))
     ply_path = os.path.join(aihub_models_path, "obj_{:06d}.ply".format(id))

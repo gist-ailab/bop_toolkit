@@ -1,27 +1,24 @@
 import os, sys, glob
-import shelve
 import json
 import cv2
 import numpy as np
-import imageio
 from tqdm import tqdm
 import copy
 import open3d as o3d
-import yaml
-import time
+import pandas as pd
 
 treg = o3d.t.pipelines.registration 
 import open3d as o3d
 import numpy as np 
-from scipy.spatial import cKDTree
-# import teaserpp_python
 from tqdm import tqdm
 import shutil
 
 
 
+dates = ["22.09.28", "22.09.29", "22.09.30", "22.10.01", "22.10.02", "22.10.03"]
 
-
+sch_file = 'assets/scene_info.xlsx'
+sch_data = pd.read_excel(sch_file, engine='openpyxl')
 
 dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
@@ -41,16 +38,24 @@ def i2s(num):
     return "{0:06d}".format(num)
 
 
-scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
-# scene_ids = [x for x in scene_ids if x in bin_scene_ids][34:]
-# scene_ids = [x for x in scene_ids if x in shelf_scene_ids]
-# scene_ids = [x for x in scene_ids if x in table_scene_ids]
-# scene_ids = [3, 4, 13, 22, 29, 34, 35, 41, 42, 43, 44, 45, 46, 47, 48, 53, 54, 55, 56, 61, 62, 63, 64, 65, 66, 67, 68, 73, 74, 75, 76, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200]
-# scene_ids = [x for x in scene_ids if int(x) >  360]
-scene_ids = [374]
-env = "table"
+scene_ids = []
+envs = []
+for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
+    if date in dates:
+        scene_ids.append(scene_id)
+        envs.append(env.lower())
 
-for scene_id in tqdm(scene_ids):
+for scene_id, env in tqdm(zip(scene_ids, envs)):
+
+    if "bin" in env:
+        env = "bin"
+    elif "shelf" in env:
+        env = "shelf"
+    elif "table" in env:
+        env = "table"
+    else:
+        print("Unknown env: {}".format(env))
+        exit()
 
     scene_folder_path = os.path.join(dataset_root, i2s(scene_id))
     if not os.path.isdir(scene_folder_path):

@@ -4,6 +4,7 @@ import json
 import numpy as np
 from tqdm import tqdm
 import json
+import pandas as pd
 
 dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
@@ -12,19 +13,25 @@ def i2s(num):
     return "{0:06d}".format(num)
 
 
-scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
-scene_ids = [x for x in scene_ids if x > 300]
+dates = ["22.09.28", "22.09.29", "22.09.30", "22.10.01", "22.10.02", "22.10.03"]
 
-scene_ids = [374]
+sch_file = 'assets/scene_info.xlsx'
+sch_data = pd.read_excel(sch_file, engine='openpyxl')
 
 calibrated_results = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/calibrated_results.json"
-world_cam_poses = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/world_cam_poses_table.json"
-with open(world_cam_poses, 'r') as f:
-    world_cam_poses = json.load(f)
+world_cam_pose_path = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/"
+
 calibrated_results = json.load(open(calibrated_results))
 
+scene_ids = []
+envs = []
+for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
+    if date in dates:
+        scene_ids.append(scene_id)
+        envs.append(env.lower())
 
-for scene_id in tqdm(scene_ids):
+
+for scene_id, env in tqdm(zip(scene_ids, envs)):
 
     scene_folder_path = os.path.join(dataset_root, i2s(scene_id))
     if not os.path.isdir(scene_folder_path):
@@ -34,6 +41,12 @@ for scene_id in tqdm(scene_ids):
     scene_camera_info_path = os.path.join(dataset_root, scene_number, "scene_camera.json")
     with open(scene_camera_info_path, 'r') as j_file:
         scene_camera_info = json.load(j_file)
+    
+    env = env.replace("-", "")
+    if "table" in env:
+        env = "table"
+    with open(world_cam_pose_path + 'world_cam_poses_{}.json'.format(env), 'r') as f:
+        world_cam_poses = json.load(f)
 
     for image_number in range(1, 53):
         image_number = str(image_number)
