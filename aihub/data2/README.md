@@ -24,5 +24,6 @@ python aihub/data2/6_calc_gt_masks_and_orders.py --is_real --n_scenes 200 --n_pr
 
 
 # synthetic
-python aihub/data2/6_calc_gt_masks_and_orders.py --n_scenes 10 --n_proc 10 --proc 1
+python aihub/data2/6_calc_gt_masks_and_orders.py --n_scenes 10 --n_proc 5 --proc 1
+
 ```

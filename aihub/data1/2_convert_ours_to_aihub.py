@@ -2,7 +2,7 @@ import pandas as pd
 import os 
 import glob
 import json
-
+from tqdm import tqdm
 
 labeling_data_info_path = '/home/seung/Workspace/papers/2022/clora/bop_toolkit/assets/labeling_data_info.xlsx'
 input_path = "/home/seung/OccludedObjectDataset/ours/data1"
@@ -26,12 +26,16 @@ for obj_id, super_class_id, sub_class_id, semantic_class_id in zip(object_ids, s
     }
 
 
-for input_obj_path in sorted(glob.glob(input_path + "/models_obj/*.obj")):
+for input_obj_path in tqdm(sorted(glob.glob(input_path + "/models_obj/*.obj"))):
     obj_id = int(os.path.basename(input_obj_path).split('_')[-1].split('.')[0])
+
 
     input_png_path = os.path.join(input_path, 'models_obj', 'obj_{:06d}.png'.format(obj_id))
     input_mtl_path = os.path.join(input_path, 'models_obj', 'obj_{:06d}.obj.mtl'.format(obj_id))
     input_ply_path = os.path.join(input_path, 'models', 'obj_{:06d}.ply'.format(obj_id))
+
+    if not os.path.exists(input_png_path) or not os.path.exists(input_mtl_path) or not os.path.exists(input_ply_path):
+        continue
 
     metadata = object_id_to_class_id[obj_id]
     output_file_name = 'H1_{}_{}_{}_{}'.format(metadata['super_class'], metadata['sub_class'], metadata['semantic_class'], metadata['object_id'])
@@ -44,7 +48,7 @@ for input_obj_path in sorted(glob.glob(input_path + "/models_obj/*.obj")):
 
 
     os.system('cp {} {}'.format(input_obj_path, output_obj_path))
-    os.system('cp {} {}'.format(input_png_path, output_png_path))
+    # os.system('cp {} {}'.format(input_png_path, output_png_path))
     os.system('cp {} {}'.format(input_mtl_path, output_mtl_path))
     os.system('cp {} {}'.format(input_ply_path, output_ply_path))
 
@@ -74,6 +78,5 @@ for input_obj_path in sorted(glob.glob(input_path + "/models_obj/*.obj")):
             fout.write(line.replace('obj_{:06d}.png'.format(obj_id), output_file_name + '.png'))
         else:
             fout.write(line)
-    break
 
 

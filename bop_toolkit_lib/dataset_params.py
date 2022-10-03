@@ -211,7 +211,20 @@ def get_split_params_clora(datasets_path, dataset_name, split, split_type=None):
         p['depth_range'] = None  # Not calculated yet.
         p['azimuth_range'] = None  # Not calculated yet.
         p['elev_range'] = None  # Not calculated yet.
+  elif dataset_name == 'data2_syn_source':
+      p['scene_ids'] = {
+        'train_pbr': list(range(1, 111)),
+        'val': list(range(1, 111)),
+        'test': list(range(1, 111)),
+        'all': list(range(1, 111)),
+      }[split]
 
+      p['im_size'] = (1920, 1080) #!TODO: check this
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
   else:
     raise ValueError('Unknown BOP dataset ({}).'.format(dataset_name))
 
@@ -265,6 +278,10 @@ def get_split_params_clora(datasets_path, dataset_name, split, split_type=None):
       split_path, '{scene_id:06d}', 'mask_visib',
       '{im_id:06d}_{gt_id:06d}.png'),
   })
+
+  if dataset_name == 'data2_syn_source':
+    p['scene_gt_tpath'] = join(
+      split_path, '{scene_id:06d}', 'scene_gt.json')
 
   return p
 

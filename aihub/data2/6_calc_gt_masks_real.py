@@ -15,7 +15,6 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--is_real', action="store_true")
     parser.add_argument('--n_scenes', type=int, help='number of total scenes to be processed')
     parser.add_argument('--n_proc', type=int, help='number of process')
     parser.add_argument('--proc', type=int, help='process id')
@@ -23,29 +22,21 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    is_real = args.is_real
     n_scenes = args.n_scenes
     n_proc = args.n_proc
     proc = args.proc
 
-    home_path = '/SSDb'
+    home_path = '/home/seung'
     model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
 
-    if is_real:
-        dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
-        img_id_range = range(1, 53)
-    else:
-        dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
-        img_id_range = range(0, 1000)
+    dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
+    img_id_range = range(1, 53)
 
     # path
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
     new_scene_ids = []
     for scene_id in scene_ids:
-        if is_real:
-            scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
-        else:
-            scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt.json")
+        scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
         if not os.path.exists(scene_gt_path):
             # print("Skip scene {} (GT file not found).".format(scene_id))
             continue
@@ -66,7 +57,4 @@ if __name__ == "__main__":
     for scene_id in tqdm(scene_ids):
         print("Process scene {} [from {} to {}]".format(scene_id, scene_ids[0], scene_ids[-1]))
         for im_id in tqdm(img_id_range):
-            if is_real:
-                os.system("/home/lecun/anaconda3/envs/bsh_bop_toolkit/bin/python aihub/data2/calc_gt_masks_and_orders.py --is_real --scene_id {} --im_id {}".format(scene_id, im_id))
-            else:
-                os.system("/home/lecun/anaconda3/envs/bsh_bop_toolkit/bin/python aihub/data2/calc_gt_masks_and_orders.py --scene_id {} --im_id {}".format(scene_id, im_id))
+            os.system("/home/seung/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_masks.py --scene_id {} --im_id {}".format(scene_id, im_id))

@@ -241,6 +241,7 @@ for scene_id in tqdm(scene_ids):
         # 3. annotation
         aihub_gt["annotation"] = []
         for idx, obj_gt in enumerate(scene_gt[str(im_id)]):
+            print(scene_path + "/mask/{:06d}_{:06d}.png".format(im_id, idx))
             amodal_mask = cv2.imread(scene_path + "/mask/{:06d}_{:06d}.png".format(im_id, idx))[:, :, 0]
             visible_mask = cv2.imread(scene_path + "/mask_visib/{:06d}_{:06d}.png".format(im_id, idx))[:, :, 0]
             if np.sum(visible_mask) / np.sum(amodal_mask) > 0.95:
