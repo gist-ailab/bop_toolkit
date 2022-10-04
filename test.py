@@ -2,7 +2,7 @@ import json
 
 for i in range(10):
 
-    path = "/home/seung/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr/{:06d}/occ_mat.json".format(int(i))
+    path = "/home/ailab/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr/{:06d}/occ_mat.json".format(int(i))
     with open(path, 'r') as f:
         file = json.load(f)
 

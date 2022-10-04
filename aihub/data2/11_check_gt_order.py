@@ -23,7 +23,7 @@ if __name__ == "__main__":
     is_real = args.is_real
     n_scenes = args.n_scenes
 
-    home_path = '/home/seung'
+    home_path = '/home/ailab'
     model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
 
     dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
@@ -32,10 +32,9 @@ if __name__ == "__main__":
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
     new_scene_ids = []
     for scene_id in scene_ids:
-        if is_real:
-            scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
-        else:
-            scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt.json")
+        scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
+        if not os.path.exists(scene_gt_path):
+            continue
         with open(scene_gt_path) as gt_file:
             anno_obj = json.load(gt_file)
         is_all_gt_labeled = True
@@ -47,15 +46,19 @@ if __name__ == "__main__":
             new_scene_ids.append(scene_id)
     scene_ids = sorted(new_scene_ids)[:200]
 
+    not_processed_scene_ids = []
     for scene_id in scene_ids:
         scene_path = os.path.join(dataset_path, "{:06d}".format(scene_id))
         occ_mat_path = os.path.join(scene_path, "occ_mat.json")
+        if not os.path.exists(occ_mat_path):
+            not_processed_scene_ids.append(scene_id)
+            continue
         with open(occ_mat_path, 'r') as f:
             file = json.load(f)
-
         not_processed = []
-        for j in range(52):
+        for j in range(1, 53):
             if str(j) not in file.keys():
-                not_processed.append(scene_id)
+                not_processed_scene_ids.append(scene_id)
+                break
 
-        print(len(scene_ids))
+    print(not_processed_scene_ids)
