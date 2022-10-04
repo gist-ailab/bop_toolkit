@@ -15,12 +15,12 @@ import shutil
 
 
 
-dates = ["22.09.28", "22.09.29", "22.09.30", "22.10.01", "22.10.02", "22.10.03"]
+dates = ["22.10.04", "22.10.4"]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
 
-dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
+dataset_root = "/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
 camera_names = ["rs_d415", "rs_d435", "azure_kinect", "zivid"]
 bin_scene_ids = list(range(1, 101)) + list(range(301, 401))
@@ -46,7 +46,6 @@ for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number
         envs.append(env.lower())
 
 for scene_id, env in zip(tqdm(scene_ids), envs):
-
     if "bin" in env:
         env = "bin"
     elif "shelf" in env:

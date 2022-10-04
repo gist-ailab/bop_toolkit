@@ -4,7 +4,7 @@ import glob
 
 
 input_json_path = "assets/scene_info.json"
-output_path = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
+output_path = "/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
 
 def i2s(num):

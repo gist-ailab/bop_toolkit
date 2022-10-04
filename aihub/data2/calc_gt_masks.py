@@ -30,7 +30,6 @@ if __name__ == "__main__":
 
     dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
     img_id_range = range(1, 53)
-        img_id_range = range(0, 1000)
 
     scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
     print("Process scene {} image {} \n".format(scene_id, im_id))
