@@ -45,7 +45,7 @@ for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number
         scene_ids.append(scene_id)
         envs.append(env.lower())
 
-for scene_id, env in tqdm(zip(scene_ids, envs)):
+for scene_id, env in zip(tqdm(scene_ids), envs):
 
     if "bin" in env:
         env = "bin"
@@ -180,7 +180,6 @@ for scene_id, env in tqdm(zip(scene_ids, envs)):
         pcds_this_cam = pcds_this_cam.voxel_down_sample(voxel_size=voxel_size)
 
 
-        print(np.asarray(pcds_this_cam.points).shape)
         pcds_this_cam = pcds_this_cam.transform(np.linalg.inv(se3s_base_to_camera_at_center[camera_name]))
 
         o3d.io.write_point_cloud(os.path.join(scene_folder_path, "pcd", camera_name_to_pcd_number[camera_name] + ".pcd"), pcds_this_cam)

@@ -23,5 +23,5 @@ for model_in_path in tqdm(glob.glob(input_model_path + "/*.ply")):
   print(model_in_path)
   model_out_path = os.path.join(output_model_path, os.path.basename(model_in_path))
   pcd = o3d.io.read_point_cloud(model_in_path)
-  pcd = pcd.voxel_down_sample(voxel_size=0.0001)
+  pcd = pcd.voxel_down_sample(voxel_size=1)
   o3d.io.write_point_cloud(model_out_path, pcd)

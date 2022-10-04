@@ -48,7 +48,7 @@ for input_obj_path in tqdm(sorted(glob.glob(input_path + "/models_obj/*.obj"))):
 
 
     os.system('cp {} {}'.format(input_obj_path, output_obj_path))
-    # os.system('cp {} {}'.format(input_png_path, output_png_path))
+    os.system('cp {} {}'.format(input_png_path, output_png_path))
     os.system('cp {} {}'.format(input_mtl_path, output_mtl_path))
     os.system('cp {} {}'.format(input_ply_path, output_ply_path))
 

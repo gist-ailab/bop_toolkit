@@ -18,7 +18,7 @@ def mask2rle(im):
 
 
 dataset_root = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_syn_raw"
-aihub_path = "/home/seung/OccludedObjectDataset/aihub"
+aihub_path = "/OccludedObjectDataset/aihub"
 # depth
 # gt
 # pcd
