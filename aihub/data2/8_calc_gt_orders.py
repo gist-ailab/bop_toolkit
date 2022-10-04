@@ -27,7 +27,7 @@ if __name__ == "__main__":
     n_proc = args.n_proc
     proc = args.proc
 
-    home_path = '/home/seung'
+    home_path = '/home/ailab'
     model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
 
     if is_real:
@@ -66,6 +66,6 @@ if __name__ == "__main__":
         print("Process scene {} [from {} to {}]".format(scene_id, scene_ids[0], scene_ids[-1]))
         for im_id in tqdm(img_id_range):
             if is_real:
-                os.system("/home/seung/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_order.py --is_real --scene_id {} --im_id {}".format(scene_id, im_id))
+                os.system("/home/ailab/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --is_real --scene_id {} --im_id {}".format(scene_id, im_id))
             else:
-                os.system("/home/seung/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --scene_id {} --im_id {}".format(scene_id, im_id))
+                os.system("/home/ailab/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --scene_id {} --im_id {}".format(scene_id, im_id))

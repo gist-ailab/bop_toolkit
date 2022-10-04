@@ -27,7 +27,7 @@ if __name__ == "__main__":
     im_id = args.im_id
     is_real = args.is_real
 
-    home_path = '/home/seung'
+    home_path = '/home/ailab'
     model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
 
     if is_real:

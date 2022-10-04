@@ -17,8 +17,8 @@ def mask2rle(im):
     return rle
 
 
-dataset_root = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_real_source"
-aihub_path = "/home/seung/OccludedObjectDataset/aihub"
+dataset_root = "/home/ailab/OccludedObjectDataset/ours/data3/data3_1_real_source"
+aihub_path = "/home/ailab/OccludedObjectDataset/aihub"
 
 
 scene_id_to_obj_id = {
@@ -132,7 +132,7 @@ for scene_id in tqdm(scene_ids):
         
         # 1. scene_info
         aihub_gt["scene_info"] = {
-                "object_set": scene_id_to_object_set[str(scene_id)], # 1.1
+                "object_set": scene_id_to_object_set[str(scene_id% 30)], # 1.1
                 "scene_id": int(scene_id), # 1.2
                 "image_id": int(im_id), # 1.3
                 "environment": "table",
