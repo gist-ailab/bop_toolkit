@@ -20,7 +20,9 @@ attrs_to_save = []
 
 # Process models of all objects in the selected dataset.
 for model_in_path in tqdm(glob.glob(input_model_path + "/*.ply")):
-  print(model_in_path)
+
+  id = int(os.path.basename(model_in_path).replace(".ply", "").split("_")[-1])
+  print("processing model: obj id: {}".format(id))
   model_out_path = os.path.join(output_model_path, os.path.basename(model_in_path))
   pcd = o3d.io.read_point_cloud(model_in_path)
   pcd = pcd.voxel_down_sample(voxel_size=1)

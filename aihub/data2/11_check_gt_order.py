@@ -61,4 +61,5 @@ if __name__ == "__main__":
                 not_processed_scene_ids.append(scene_id)
                 break
 
-    print(not_processed_scene_ids)
+        print(len(scene_ids))
+

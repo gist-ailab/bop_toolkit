@@ -6,14 +6,14 @@ from tqdm import tqdm
 import json
 import pandas as pd
 
-dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
+dataset_root = "/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
 
 def i2s(num):
     return "{0:06d}".format(num)
 
 
-dates = ["22.09.28", "22.09.29", "22.09.30", "22.10.01", "22.10.02", "22.10.03"]
+dates = ["22.10.04", "22.10.4"]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
@@ -29,7 +29,6 @@ for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number
     if date in dates:
         scene_ids.append(scene_id)
         envs.append(env.lower())
-
 
 for scene_id, env in tqdm(zip(scene_ids, envs)):
 
