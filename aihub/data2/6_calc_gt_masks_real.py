@@ -26,7 +26,7 @@ if __name__ == "__main__":
     n_proc = args.n_proc
     proc = args.proc
 
-    home_path = '/home/seung'
+    home_path = '/home/ailab'
     model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
 
     dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # path
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
     new_scene_ids = []
-    for scene_id in scene_ids:
+    for scene_id in scene_ids[25:]:
         scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
         if not os.path.exists(scene_gt_path):
             # print("Skip scene {} (GT file not found).".format(scene_id))
@@ -57,4 +57,4 @@ if __name__ == "__main__":
     for scene_id in tqdm(scene_ids):
         print("Process scene {} [from {} to {}]".format(scene_id, scene_ids[0], scene_ids[-1]))
         for im_id in tqdm(img_id_range):
-            os.system("/home/seung/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_masks.py --scene_id {} --im_id {}".format(scene_id, im_id))
+            os.system("/home/ailab/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_masks.py --scene_id {} --im_id {}".format(scene_id, im_id))

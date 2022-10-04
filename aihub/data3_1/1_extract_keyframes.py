@@ -2,8 +2,8 @@ import os
 import glob
 import json
 
-dataset_root = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_real_raw"
-output_root = "/home/seung/OccludedObjectDataset/ours/data3/data3_1_real_source"
+dataset_root = "/home/ailab/OccludedObjectDataset/ours/data3/data3_1_real_raw"
+output_root = "/home/ailab/OccludedObjectDataset/ours/data3/data3_1_real_source"
 
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
 scene_ids = [x for x in scene_ids if int(x) > 60]
