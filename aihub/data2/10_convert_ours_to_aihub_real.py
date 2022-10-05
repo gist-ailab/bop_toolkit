@@ -17,13 +17,13 @@ def mask2rle(im):
     return rle
 
 
-is_real = False
-scene_info_path = '/home/seung/Workspace/papers/2022/clora/bop_toolkit/assets/scene_info.xlsx'
+is_real = True
+scene_info_path = 'assets/scene_info.xlsx'
 if is_real:
-    dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_real_source/all"
+    dataset_root = "/home/ailab/OccludedObjectDataset/ours/data2/data2_real_source/all"
 else:
-    dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
-aihub_path = "/home/seung/OccludedObjectDataset/aihub"
+    dataset_root = "/home/ailab/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
+aihub_path = "/home/ailab/OccludedObjectDataset/aihub"
 
 env_to_background = {
     "bin":
@@ -91,6 +91,7 @@ if is_real:
 
 
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
+scene_ids = scene_ids[150:205]
 
 for scene_id in tqdm(scene_ids):
 
@@ -107,6 +108,7 @@ for scene_id in tqdm(scene_ids):
         object_set = "ycb_all"
     else:
         object_set = scene_id_to_scene_info[int(scene_id)]['object_set']
+    print(scene_id, object_set)
     sub_dir_1, sub_dir_2 =  object_set_to_subdir[object_set]
     dir_name = "실제" if is_real else "가상"
     sub_dir_1_path = os.path.join(aihub_path, '원천데이터', '다수물체가림', dir_name, sub_dir_1)
@@ -241,7 +243,6 @@ for scene_id in tqdm(scene_ids):
         # 3. annotation
         aihub_gt["annotation"] = []
         for idx, obj_gt in enumerate(scene_gt[str(im_id)]):
-            print(scene_path + "/mask/{:06d}_{:06d}.png".format(im_id, idx))
             amodal_mask = cv2.imread(scene_path + "/mask/{:06d}_{:06d}.png".format(im_id, idx))[:, :, 0]
             visible_mask = cv2.imread(scene_path + "/mask_visib/{:06d}_{:06d}.png".format(im_id, idx))[:, :, 0]
             if np.sum(visible_mask) / np.sum(amodal_mask) > 0.95:

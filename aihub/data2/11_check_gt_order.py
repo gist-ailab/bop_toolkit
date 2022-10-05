@@ -25,8 +25,11 @@ if __name__ == "__main__":
 
     home_path = '/home/ailab'
     model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
+    if is_real:
+        dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
+    else:
+        dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
 
-    dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
     # path
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
@@ -38,13 +41,13 @@ if __name__ == "__main__":
         with open(scene_gt_path) as gt_file:
             anno_obj = json.load(gt_file)
         is_all_gt_labeled = True
-        for im_id in range(1, 53):
+        for im_id in range(1, 1000):
             if str(im_id) not in anno_obj.keys():
                 is_all_gt_labeled = False
                 break
         if is_all_gt_labeled:
             new_scene_ids.append(scene_id)
-    scene_ids = sorted(new_scene_ids)[:200]
+    scene_ids = sorted(new_scene_ids)[:10]
 
     not_processed_scene_ids = []
     for scene_id in scene_ids:

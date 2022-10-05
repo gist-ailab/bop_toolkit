@@ -127,14 +127,24 @@ for scene_id in tqdm(scene_ids):
     else:
         split = "test"
 
+    aihub_im_id = 0
+    keyframe_path = os.path.join(dataset_root, "{0:06d}".format(scene_id), "keyframes.json")
+    key_frames = json.load(open(keyframe_path, 'r'))
+
     for im_id in tqdm(im_ids):
+
+        if "{:06d}".format(im_id) in key_frames:
+            aihub_im_id += 1
+        else:
+            continue
+
         aihub_gt = {}
         
         # 1. scene_info
         aihub_gt["scene_info"] = {
                 "object_set": scene_id_to_object_set[str(scene_id% 30)], # 1.1
                 "scene_id": int(scene_id), # 1.2
-                "image_id": int(im_id), # 1.3
+                "image_id": int(aihub_im_id), # 1.3
                 "environment": "table",
                 "background": "office_partition", # 1.5
                 "split": split
@@ -144,7 +154,7 @@ for scene_id in tqdm(scene_ids):
         with open(scene_camera_path, "r") as f:
             scene_camera = json.load(f)
 
-        camera_idx = im_id % 3
+        camera_idx = aihub_im_id % 3
         if camera_idx == 1:
             camera_type = "realsense_d415"
             width, height = 1920, 1080
@@ -219,7 +229,7 @@ for scene_id in tqdm(scene_ids):
         }
 
         
-        new_file_name = "H3_2_{:06d}_{:06d}".format(scene_id, im_id)
+        new_file_name = "H3_2_{:06d}_{:06d}".format(scene_id, aihub_im_id)
         shutil.copy(scene_path + "/rgb/{:06d}.png".format(im_id), new_rgb_path + "/{}.png".format(new_file_name))
         shutil.copy(scene_path + "/depth/{:06d}.png".format(im_id), new_depth_path + "/{}.png".format(new_file_name))
         shutil.copy(scene_path + "/pcd/{:06d}.pcd".format(im_id), new_pcd_path + "/{}.pcd".format(new_file_name))

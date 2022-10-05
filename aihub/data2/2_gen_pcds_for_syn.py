@@ -23,7 +23,7 @@ import shutil
 
 
 
-dataset_root = "/home/seung/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
+dataset_root = "/home/ailab/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
 
 camera_names = ["rs_d415", "rs_d435", "azure_kinect", "zivid"]
 num_imgs_per_folder = 52
@@ -34,7 +34,7 @@ def i2s(num):
 
 
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
-scene_ids = list(range(0, 10))
+scene_ids = list(range(1, 2))
 for scene_id in tqdm(scene_ids):
 
     scene_folder_path = os.path.join(dataset_root, i2s(scene_id))
@@ -58,7 +58,7 @@ for scene_id in tqdm(scene_ids):
     if not os.path.exists(os.path.join(scene_folder_path, "pcd")):
         os.makedirs(os.path.join(scene_folder_path, "pcd"))
 
-    for idx, image_number in enumerate(tqdm(range(0, 1000))):
+    for idx, image_number in enumerate(tqdm(range(851, 1000))):
         # read camera_info
         cam_K = np.array(scene_camera_info[str(image_number)]["cam_K"]).reshape(3, 3)
         depth_scale = scene_camera_info[str(image_number)]["depth_scale"]

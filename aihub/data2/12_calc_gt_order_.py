@@ -30,13 +30,13 @@ if __name__ == "__main__":
     home_path = '/'
     model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
 
-    dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
-    img_id_range = range(1, 53)
+    dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
+    img_id_range = range(0, 1000)
 
 
-    scene_ids =  [35, 36, 37, 38, 39, 40, 41, 73, 74, 75, 76, 77, 78, 79, 80]
+    scene_ids =  [3]
     # scene_ids = [ 81, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 202, 203, 204]
     for scene_id in tqdm(scene_ids):
         print("Process scene {} [from {} to {}]".format(scene_id, scene_ids[0], scene_ids[-1]))
         for im_id in tqdm(img_id_range):
-            os.system("/home/seung/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --is_real --scene_id {} --im_id {}".format(scene_id, im_id))
+            os.system("/home/ailab/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --scene_id {} --im_id {}".format(scene_id, im_id))
