@@ -15,7 +15,7 @@ import shutil
 
 
 
-dates = ["22.10.04", "22.10.4"]
+dates = ["22.10.06"]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')

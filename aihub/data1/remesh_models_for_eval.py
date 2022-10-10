@@ -8,55 +8,25 @@ modifier).
 
 import os
 import glob
+import pymeshlab
+from pymeshlab import Percentage
 
-from bop_toolkit_lib import config
-from bop_toolkit_lib import dataset_params
-from bop_toolkit_lib import misc
-
-
-# PARAMETERS.
-################################################################################
-p = {
-  # See dataset_params.py for options.
-  'dataset': 'lm',
-
-  # Type of input object models.
-  # None = default model type.
-  'model_in_type': None,
-
-  # Type of output object models.
-  'model_out_type': 'eval',
-
-  # Folder containing the BOP datasets.
-  'datasets_path': config.datasets_path,
-
-  # Path to meshlabserver.exe (tested version: 1.3.3).
-  # On Windows: C:\Program Files\VCG\MeshLab133\meshlabserver.exe
-  'meshlab_server_path': config.meshlab_server_path,
-
-  # Path to scripts/meshlab_scripts/remesh_for_eval.mlx.
-  'meshlab_script_path': os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), 'meshlab_scripts',
-    r'remesh_for_eval_cell=0.25.mlx'),
-}
-################################################################################
-
-
-input_model_path = "/home/seung/OccludedObjectDataset/ours/data2/models"
-output_model_path = "/home/seung/OccludedObjectDataset/ours/data2/models_eval"
-
-# Attributes to save for the output models.
-attrs_to_save = []
+input_model_path = "/OccludedObjectDataset/ours/data1/models_original"
+output_model_path = "/OccludedObjectDataset/ours/data1/models_eval"
 
 # Process models of all objects in the selected dataset.
 for model_in_path in glob.glob(input_model_path + "/*.ply"):
-
-  misc.log('\n\n\nProcessing model of object {}...\n'.format(os.path.basename(model_in_path)))
+  obj_id = os.path.basename(model_in_path).split("_")[-1].split(".")[0]
+  if int(obj_id) > 83:
+    continue
+  print("Processing", model_in_path)
   model_out_path = os.path.join(output_model_path, os.path.basename(model_in_path))
 
-  misc.ensure_dir(os.path.dirname(model_out_path))
-
-  misc.run_meshlab_script(p['meshlab_server_path'], p['meshlab_script_path'],
-                          model_in_path, model_out_path, attrs_to_save)
-
-misc.log('Done.')
+  ms = pymeshlab.MeshSet()
+  ms.load_new_mesh(model_in_path)
+  ms.apply_filter('meshing_remove_unreferenced_vertices')
+  ms.apply_filter('meshing_remove_duplicate_vertices')
+  ms.apply_filter('meshing_remove_duplicate_faces')
+  ms.apply_filter('generate_resampled_uniform_mesh', cellsize=Percentage(0.25), offset=Percentage(0.0), mergeclosevert=True, discretize=False, multisample=True, absdist=False)
+  ms.apply_filter('meshing_decimation_quadric_edge_collapse', targetfacenum=0, targetperc=0.025, qualitythr=0.5, preserveboundary=True, boundaryweight=1.0, preservenormal=True, preservetopology=False, optimalplacement=True, planarquadric=True, qualityweight=False, autoclean=True, selected=False)
+  ms.save_current_mesh(model_out_path, save_vertex_color=True, save_vertex_normal=True, save_face_color=False, save_wedge_texcoord=False)

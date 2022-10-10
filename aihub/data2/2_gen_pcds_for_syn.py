@@ -53,8 +53,6 @@ for scene_id in tqdm(scene_ids):
     with open(scene_camera_info_path, 'r') as j_file:
         scene_camera_info = json.load(j_file)
 
-
-
     if not os.path.exists(os.path.join(scene_folder_path, "pcd")):
         os.makedirs(os.path.join(scene_folder_path, "pcd"))
 
