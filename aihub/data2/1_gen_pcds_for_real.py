@@ -15,7 +15,7 @@ import shutil
 
 
 
-dates = ["22.10.06"]
+dates = ["22.10.07", "22.10.08", "22.10.09", "22.10.10", "22.10.7", "22.10.8", "22.10.9"]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
@@ -35,7 +35,7 @@ num_imgs_per_folder = 52
 voxel_size = 0.0025
 
 def i2s(num):
-    return "{0:06d}".format(num)
+    return "{0:06d}".format(int(float(num)))
 
 
 scene_ids = []
@@ -44,6 +44,9 @@ for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number
     if date in dates:
         scene_ids.append(scene_id)
         envs.append(env.lower())
+
+scene_ids = [201, 580, 584, 592, 228, 621, 622, 626, 176, 635, 636, 285]
+envs = ["table", "table", "shelf", "table", "table", "shelf", "shelf", "shelf", "shelf", "table", "table", "table"]
 
 for scene_id, env in zip(tqdm(scene_ids), envs):
     if "bin" in env:

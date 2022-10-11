@@ -10,10 +10,10 @@ dataset_root = "/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
 
 def i2s(num):
-    return "{0:06d}".format(num)
+    return "{0:06d}".format(int(float(num)))
 
 
-dates = ["22.10.06"]
+dates = ["22.10.07", "22.10.08", "22.10.09", "22.10.10", "22.10.7", "22.10.8", "22.10.9"]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
@@ -26,10 +26,11 @@ calibrated_results = json.load(open(calibrated_results))
 scene_ids = []
 envs = []
 for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
+    print(date)
     if date in dates:
         scene_ids.append(scene_id)
         envs.append(env.lower())
-
+print(scene_ids)
 for scene_id, env in tqdm(zip(scene_ids, envs)):
 
     scene_folder_path = os.path.join(dataset_root, i2s(scene_id))

@@ -98,8 +98,8 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
 
     'data2_real_source': gist_obj_ids,
     'data2_syn_source': gist_obj_ids,
-    'data3_real_source': gist_obj_ids,
-    'data3_syn_source': gist_obj_ids, 
+    'data3_1_real_source': gist_obj_ids,
+    'data3_1_syn_source': gist_obj_ids, 
   }[dataset_name]
 
 
@@ -124,8 +124,8 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
 
     'data2_real_source': None,
     'data2_syn_source': None,
-    'data3_real_source': None,
-    'data3_syn_source': None,
+    'data3_1_real_source': None,
+    'data3_1_syn_source': None,
   }[dataset_name]
 
   # T-LESS includes two types of object models, CAD and reconstructed.
@@ -138,7 +138,7 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     dataset_name = 'hb'
 
   # Name of the folder with object models.
-  models_folder_name = 'models'
+  models_folder_name = 'models_original'
   if model_type is not None:
     models_folder_name += '_' + model_type
 
@@ -217,6 +217,20 @@ def get_split_params_clora(datasets_path, dataset_name, split, split_type=None):
         'val': list(range(1, 111)),
         'test': list(range(1, 111)),
         'all': list(range(1, 111)),
+      }[split]
+
+      p['im_size'] = (1920, 1080) #!TODO: check this
+
+      if split == 'test':
+        p['depth_range'] = None  # Not calculated yet.
+        p['azimuth_range'] = None  # Not calculated yet.
+        p['elev_range'] = None  # Not calculated yet.
+  elif dataset_name == 'data3_1_real_source':
+      p['scene_ids'] = {
+        'train_pbr': list(range(1, 90)),
+        'val': list(range(1, 90)),
+        'test': list(range(1, 90)),
+        'all': list(range(1, 90)),
       }[split]
 
       p['im_size'] = (1920, 1080) #!TODO: check this

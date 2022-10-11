@@ -18,14 +18,14 @@ for scene_path in sorted(glob.glob(output_path + "/*")):
     scene_number = os.path.basename(scene_path)
     try:
         scene_number = int(scene_number)
-        target_scene_numbers.append(scene_number)
+        target_scene_numbers.append(int(scene_number))
     except:
         continue
 
 for scene_id, scene_obj_info in scene_obj_infos.items():
-    if int(scene_id) not in target_scene_numbers:
+    if int(float(scene_id)) not in target_scene_numbers:
         continue
-    scene_number = i2s(int(scene_id))
+    scene_number = i2s(int(float(scene_id)))
     scene_folder_path = os.path.join(output_path, scene_number)
     with open(os.path.join(scene_folder_path, "scene_obj_info.json"), 'w') as f:
         json.dump(scene_obj_info, f, indent=2)
