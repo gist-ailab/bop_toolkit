@@ -18,7 +18,6 @@ if __name__ == "__main__":
     parser.add_argument('--n_scenes', type=int, help='number of total scenes to be processed')
     parser.add_argument('--n_proc', type=int, help='number of process')
     parser.add_argument('--proc', type=int, help='process id')
-    parser.add_argument('--img', type=int, help='image id')
 
     args = parser.parse_args()
 
@@ -35,7 +34,7 @@ if __name__ == "__main__":
     # path
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
     new_scene_ids = []
-    for scene_id in scene_ids[25:]:
+    for scene_id in scene_ids[200:236]:
         scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
         if not os.path.exists(scene_gt_path):
             # print("Skip scene {} (GT file not found).".format(scene_id))

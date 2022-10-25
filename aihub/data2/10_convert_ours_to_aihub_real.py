@@ -1,6 +1,7 @@
 from re import I
 import shutil
 import shutil
+from symbol import except_clause
 from tqdm import tqdm
 import os, glob
 import pandas as pd
@@ -75,12 +76,15 @@ if is_real:
 
     scene_id_to_scene_info = {}
     for scene_id, scene_type, environment, background in zip(scene_ids, scene_types, environments, backgrounds):
-        scene_type = scene_type.lower().replace("-", "_")
+        try:
+            scene_type = scene_type.lower().replace("-", "_")
+        except:
+            continue
         object_set = scene_type.split("_")[:2]
         object_set = "_".join(object_set)
         object_set = object_set.replace("object_all", "public_all")
         split = scene_type.split("_")[-1]
-        background = background[0] if isinstance(background, str) else background
+        background = str(int(background[0] if isinstance(background, str) else background))
         scene_id_to_scene_info[int(scene_id)] = {
             "object_set": object_set, # 1.1 
             "scene_id": int(scene_id), # 1.2
@@ -91,7 +95,7 @@ if is_real:
 
 
 scene_ids = sorted([int(x) for x in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, x))])
-scene_ids = scene_ids[150:205]
+scene_ids = [int(x) for x in range(237, 239)]
 
 for scene_id in tqdm(scene_ids):
 

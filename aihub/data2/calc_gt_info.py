@@ -115,7 +115,7 @@ for scene_id in scene_ids:
   scene_gt_info = {}
   im_ids = sorted(scene_gt.keys())
 
-  for i in range(3,5):
+  for i in range(1,5):
     
     if (i%4) == 1:
       im_width, im_height = 1920, 1080
@@ -149,7 +149,7 @@ for scene_id in scene_ids:
 
 
     # for im_counter, im_id in enumerate(im_ids):
-    for im_id in range(3, 53):
+    for im_id in range(1, 53):
       # print(im_id)
       camera_idx = (im_id % 4) 
       # print(camera_idx)

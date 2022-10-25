@@ -15,12 +15,12 @@ import shutil
 
 
 
-dates = ["22.10.07", "22.10.08", "22.10.09", "22.10.10", "22.10.7", "22.10.8", "22.10.9"]
+dates = ["22.10.24", "22.10.24."]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
 
-dataset_root = "/OccludedObjectDataset/ours/data2/data2_real_source/all"
+dataset_root = "/home/ailab/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
 camera_names = ["rs_d415", "rs_d435", "azure_kinect", "zivid"]
 bin_scene_ids = list(range(1, 101)) + list(range(301, 401))
@@ -42,13 +42,11 @@ scene_ids = []
 envs = []
 for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
     if date in dates:
-        scene_ids.append(scene_id)
+        scene_ids.append(int(scene_id))
         envs.append(env.lower())
 
-scene_ids = [201, 580, 584, 592, 228, 621, 622, 626, 176, 635, 636, 285]
-envs = ["table", "table", "shelf", "table", "table", "shelf", "shelf", "shelf", "shelf", "table", "table", "table"]
-
 for scene_id, env in zip(tqdm(scene_ids), envs):
+    print(scene_id)
     if "bin" in env:
         env = "bin"
     elif "shelf" in env:
@@ -61,6 +59,7 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
 
     scene_folder_path = os.path.join(dataset_root, i2s(scene_id))
     if not os.path.isdir(scene_folder_path):
+        print("not exist", scene_folder_path)
         continue
     print("Processing {}".format(scene_folder_path))
     scene_number = os.path.basename(scene_folder_path)

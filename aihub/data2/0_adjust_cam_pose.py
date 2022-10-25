@@ -6,35 +6,35 @@ from tqdm import tqdm
 import json
 import pandas as pd
 
-dataset_root = "/OccludedObjectDataset/ours/data2/data2_real_source/all"
+dataset_root = "/home/ailab/OccludedObjectDataset/ours/data2/data2_real_source/all"
 
 
 def i2s(num):
     return "{0:06d}".format(int(float(num)))
 
 
-dates = ["22.10.07", "22.10.08", "22.10.09", "22.10.10", "22.10.7", "22.10.8", "22.10.9"]
+dates = ["22.10.24", "22.10.24."]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
 
-calibrated_results = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/calibrated_results.json"
-world_cam_pose_path = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/"
+calibrated_results = "/home/ailab/Workspace/clora/gail-camera-manager/assets/data2/calibrated_results.json"
+world_cam_pose_path = "/home/ailab/Workspace/clora/gail-camera-manager/assets/data2/"
 
 calibrated_results = json.load(open(calibrated_results))
 
 scene_ids = []
 envs = []
 for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
-    print(date)
     if date in dates:
-        scene_ids.append(scene_id)
+        scene_ids.append(int(scene_id))
         envs.append(env.lower())
-print(scene_ids)
+
 for scene_id, env in tqdm(zip(scene_ids, envs)):
 
     scene_folder_path = os.path.join(dataset_root, i2s(scene_id))
     if not os.path.isdir(scene_folder_path):
+        print(scene_folder_path)
         continue
     print("Processing {}".format(scene_folder_path))
     scene_number = os.path.basename(scene_folder_path)
@@ -43,6 +43,7 @@ for scene_id, env in tqdm(zip(scene_ids, envs)):
         scene_camera_info = json.load(j_file)
     
     env = env.replace("-", "")
+    env = env.replace("_", "")
     if "table" in env:
         env = "table"
     with open(world_cam_pose_path + 'world_cam_poses_{}.json'.format(env), 'r') as f:
@@ -72,3 +73,4 @@ for scene_id, env in tqdm(zip(scene_ids, envs)):
     
     with open(scene_camera_info_path, 'w') as j_file:
         json.dump(scene_camera_info, j_file, indent=2)
+        print(scene_camera_info)

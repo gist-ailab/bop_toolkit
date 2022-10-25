@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # path
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
     new_scene_ids = []
-    for scene_id in scene_ids:
+    for scene_id in scene_ids[200:236]:
         if is_real:
             scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
         else:

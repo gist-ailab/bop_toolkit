@@ -3,18 +3,16 @@ import glob
 import pymeshlab
 from tqdm import tqdm
 
+ood_root = os.environ['OOD_ROOT']
 
-artec_models_path = "/home/seung/OccludedObjectDataset/ours/data1/artec"
-aihub_models_path = "/home/seung/OccludedObjectDataset/ours/data1/models_original"
-
+artec_models_path = os.path.join(ood_root, "/ours/data1/artec")
+aihub_models_path = os.path.join(ood_root, "/ours/data1/models_original")
 
 for obj_path in tqdm(sorted(glob.glob(artec_models_path + "/*.obj"))):
 
     id = int(os.path.basename(obj_path).replace(".obj", ""))
     ply_path = os.path.join(aihub_models_path, "obj_{:06d}.ply".format(id))
     print("processing model: obj id: {}".format(id))
-
-
 
     ms = pymeshlab.MeshSet()
     ms.load_new_mesh(obj_path)

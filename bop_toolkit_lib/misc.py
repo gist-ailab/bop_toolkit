@@ -154,7 +154,7 @@ def depth_im_to_dist_im_fast(depth_im, K):
   """
   # Only recomputed if depth_im.shape or K changes.
   pre_Xs, pre_Ys = Precomputer.precompute_lazy(depth_im, K)
-  print(pre_Ys.shape)
+  # print(pre_Ys.shape)
   dist_im = np.sqrt(
     np.multiply(pre_Xs, depth_im)**2 +
     np.multiply(pre_Ys, depth_im)**2 +
