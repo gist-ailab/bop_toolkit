@@ -1,4 +1,4 @@
-*.xlsx#
+*.zip
 .vscode/
 bop_renderer/
 # Byte-compiled / optimized / DLL files
