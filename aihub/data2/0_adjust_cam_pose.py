@@ -6,29 +6,32 @@ from tqdm import tqdm
 import json
 import pandas as pd
 
-dataset_root = "/home/ailab/OccludedObjectDataset/ours/data2/data2_real_source/all"
-
+ood_root = os.environ['OOD_ROOT']
+dataset_root = os.path.join(ood_root, 'ours/data2/data2_real_source/all')
 
 def i2s(num):
     return "{0:06d}".format(int(float(num)))
 
 
-dates = ["22.10.24", "22.10.24."]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
 
-calibrated_results = "/home/ailab/Workspace/clora/gail-camera-manager/assets/data2/calibrated_results.json"
-world_cam_pose_path = "/home/ailab/Workspace/clora/gail-camera-manager/assets/data2/"
+calibrated_results = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/calibrated_results.json"
+world_cam_pose_path = "/home/seung/catkin_ws/src/gail-camera-manager/assets/data2/"
 
 calibrated_results = json.load(open(calibrated_results))
 
 scene_ids = []
 envs = []
 for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
-    if date in dates:
-        scene_ids.append(int(scene_id))
-        envs.append(env.lower())
+    try:
+        int(scene_id)
+    except:
+        continue
+
+    scene_ids.append(int(scene_id))
+    envs.append(env.lower())
 
 for scene_id, env in tqdm(zip(scene_ids, envs)):
 
@@ -36,7 +39,6 @@ for scene_id, env in tqdm(zip(scene_ids, envs)):
     if not os.path.isdir(scene_folder_path):
         print(scene_folder_path)
         continue
-    print("Processing {}".format(scene_folder_path))
     scene_number = os.path.basename(scene_folder_path)
     scene_camera_info_path = os.path.join(dataset_root, scene_number, "scene_camera.json")
     with open(scene_camera_info_path, 'r') as j_file:
@@ -70,7 +72,11 @@ for scene_id, env in tqdm(zip(scene_ids, envs)):
 
         scene_camera_info[image_number]["cam_R_w2c"] = cam_R_w2c
         scene_camera_info[image_number]["cam_t_w2c"] = cam_t_w2c
-    
+    scene_camera_info['0'] = scene_camera_info['1']
+    scene_camera_info['-1'] = scene_camera_info['1']
+    scene_camera_info['-2'] = scene_camera_info['2']
+    scene_camera_info['-3'] = scene_camera_info['3']
+    scene_camera_info['-4'] = scene_camera_info['4']
+    print("Saving {}".format(scene_camera_info_path))
     with open(scene_camera_info_path, 'w') as j_file:
         json.dump(scene_camera_info, j_file, indent=2)
-        print(scene_camera_info)

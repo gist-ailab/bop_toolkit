@@ -19,7 +19,7 @@ for object_id, bop_name, paper in zip(models_info["object_id"], models_info["mod
             continue
         if not isinstance(paper, str):
             continue
-        if bop_name[:3] == 'obj' and paper == 'YCBV':
+        if bop_name[:3] == 'obj' and paper == 'YCB':
             object_ids.append(int(object_id))
             bop_names.append(bop_name)
 
@@ -33,12 +33,12 @@ for object_id, bop_name in zip(tqdm(object_ids), bop_names):
     ## 1. copy models
     
     # obj
-    models_ori = os.path.join(ood_root, 'ours/data1/YCBV/models/{}.ply'.format(bop_name))
+    models_ori = os.path.join(ood_root, 'ours/data1/ycbv/models/{}.ply'.format(bop_name))
     models_new = os.path.join(ood_root, 'ours/data1/models/obj_{:06d}.ply'.format(object_id))
     os.system('cp {} {}'.format(models_ori, models_new))
 
     # pngs 
-    texture_ori = os.path.join(ood_root, 'ours/data1/YCBV/models/{}.png'.format(bop_name))
+    texture_ori = os.path.join(ood_root, 'ours/data1/ycbv/models/{}.png'.format(bop_name))
     texture_new = os.path.join(ood_root, 'ours/data1/models/obj_{:06d}.png'.format(object_id))
     os.system('cp {} {}'.format(texture_ori, texture_new))
 
@@ -52,7 +52,7 @@ for object_id, bop_name in zip(tqdm(object_ids), bop_names):
             f.write(line)
     
     # models_info.json
-    models_info_ori_path = os.path.join(ood_root, 'ours/data1/YCBV/models/models_info.json')
+    models_info_ori_path = os.path.join(ood_root, 'ours/data1/ycbv/models/models_info.json')
     models_info_new_path = os.path.join(ood_root, 'ours/data1/models/models_info.json')
     with open(models_info_ori_path, 'r') as f:
         models_info_ori = json.load(f)
@@ -71,12 +71,12 @@ for object_id, bop_name in zip(tqdm(object_ids), bop_names):
     # 2. copy models_eval
 
     # obj
-    models_eval_ori = os.path.join(ood_root, 'ours/data1/YCBV/models_eval/{}.ply'.format(bop_name))
+    models_eval_ori = os.path.join(ood_root, 'ours/data1/ycbv/models_eval/{}.ply'.format(bop_name))
     models_eval_new = os.path.join(ood_root, 'ours/data1/models_eval/obj_{:06d}.ply'.format(object_id))
     os.system('cp {} {}'.format(models_eval_ori, models_eval_new))
 
     # models_info.json
-    models_info_ori_path = os.path.join(ood_root, 'ours/data1/YCBV/models_eval/models_info.json')
+    models_info_ori_path = os.path.join(ood_root, 'ours/data1/ycbv/models_eval/models_info.json')
     models_info_new_path = os.path.join(ood_root, 'ours/data1/models_eval/models_info.json')
     with open(models_info_ori_path, 'r') as f:
         models_info_ori = json.load(f)

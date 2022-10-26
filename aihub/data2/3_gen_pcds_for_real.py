@@ -15,35 +15,20 @@ import shutil
 
 
 
-sch_file = './assets/scene_info.xlsx'
+dates = []
+
+sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
-
-processed_and_error_scenes = pd.read_excel('./assets/processed_and_error_scenes.ods')
-processed_scene_ids = processed_and_error_scenes['processed_scene_id'].tolist()
-error_scene_ids = processed_and_error_scenes['error_scene_id'].tolist()
-error_causes = processed_and_error_scenes['error_cause'].tolist()
-
-# skip already processed scenes
-ignore_scene_ids = []
-for scene_id in tqdm(processed_scene_ids):
-    try:
-        int(scene_id)
-    except:
-        continue
-    ignore_scene_ids.append(int(scene_id))
-ignore_scene_ids = ignore_scene_ids + error_scene_ids
-ignore_scene_ids = np.unique(ignore_scene_ids).tolist()
-
-old_processed_scene_ids = processed_scene_ids
-old_error_scene_ids = error_scene_ids
-old_error_causes = error_causes
 
 ood_root = os.environ['OOD_ROOT']
 dataset_root = os.path.join(ood_root, 'ours/data2/data2_real_source/all')
 
 camera_names = ["rs_d415", "rs_d435", "azure_kinect", "zivid"]
+bin_scene_ids = list(range(1, 101)) + list(range(301, 401))
+shelf_scene_ids = list(range(101, 201))
+table_scene_ids = list(range(201, 301))
 bounds = {
-    "bin": [[-1.2, -0.25], [-0.4, 0.4], [-0.615, 0.0]],
+    "bin": [[-1.2, -0.25], [-0.4, 0.4], [-0.630, 0.0]],
     "shelf": [[-0.70, 0.0], [-0.6, 0.6], [-0.5, 1.0]],
     "table": [[-1.5, -0.5], [-0.6, 0.6], [-0.5, 0.5]],
 }
@@ -53,25 +38,22 @@ voxel_size = 0.0025
 def i2s(num):
     return "{0:06d}".format(int(float(num)))
 
-# get only scenes that are not shared
+
 scene_ids = []
 envs = []
-for idx, (date, scene_id, env) in enumerate(zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"])):
-    try: 
-        int(scene_id)
-    except:
-        if idx < 1050:
-            print("Nan scene: {} at {} row".format(scene_id, idx))
-        continue
-    if int(scene_id) not in ignore_scene_ids:
+for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
+    if date in dates:
         scene_ids.append(int(scene_id))
         envs.append(env.lower())
 
-error_scene_ids = []
-error_causes = []
-processed_scene_ids = []
+target_scene_ids = [445, 711, 716, 802, 890, 761]
+for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
+    if scene_id in target_scene_ids:
+        scene_ids.append(int(scene_id))
+        envs.append(env.lower())
 
 for scene_id, env in zip(tqdm(scene_ids), envs):
+    print(scene_id)
     if "bin" in env:
         env = "bin"
     elif "shelf" in env:
@@ -86,8 +68,7 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
     if not os.path.isdir(scene_folder_path):
         print("not exist", scene_folder_path)
         continue
-    
-    print("==> Processing {}".format(scene_folder_path))
+    print("Processing {}".format(scene_folder_path))
     scene_number = os.path.basename(scene_folder_path)
     n_global_image_number = int(num_imgs_per_folder / len(camera_names))
 
@@ -103,19 +84,19 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
 
     bound = bounds[env]
 
-    is_skip = False
     for global_image_number in tqdm(range(1, n_global_image_number + 1)):
+
         if not os.path.exists(os.path.join(scene_folder_path, "pcd")):
             os.makedirs(os.path.join(scene_folder_path, "pcd"))
+
         for idx, camera_name in enumerate(camera_names):
-            if is_skip:
-                break
             # read camera_info
             image_number = len(camera_names) * (global_image_number - 1) + idx + 1
             cam_K = np.array(scene_camera_info[str(image_number)]["cam_K"]).reshape(3, 3)
             depth_scale = scene_camera_info[str(image_number)]["depth_scale"]
             cam_R_w2c = np.array(scene_camera_info[str(image_number)]["cam_R_w2c"]).reshape(3,3)
             cam_t_w2c = np.array(scene_camera_info[str(image_number)]["cam_t_w2c"]) 
+            
 
             # read rgb, depth
             rgb_path = os.path.join(dataset_root, scene_number, "rgb", i2s(image_number) + ".png")
@@ -123,15 +104,9 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
             rgb_img = cv2.imread(rgb_path)
             depth_img = cv2.imread(depth_path, -1)
             depth_img = np.float32(depth_img) / depth_scale / 1000
-            try: 
-                rgb_img_o3d = o3d.geometry.Image(cv2.cvtColor(rgb_img, cv2.COLOR_BGR2RGB))
-                depth_img_o3d = o3d.geometry.Image(depth_img)
-            except:
-                print("Error in reading image: {}".format(image_number))
-                error_causes.append("Error in reading image: {}".format(image_number))
-                error_scene_ids.append(scene_id)
-                is_skip = True
-                continue
+
+            rgb_img_o3d = o3d.geometry.Image(cv2.cvtColor(rgb_img, cv2.COLOR_BGR2RGB))
+            depth_img_o3d = o3d.geometry.Image(depth_img)
 
             # convert image to point cloud
             intrinsic = o3d.camera.PinholeCameraIntrinsic(rgb_img.shape[0], rgb_img.shape[1],
@@ -161,11 +136,7 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
             pcd = pcd.transform(np.linalg.inv(se3))
             o3d.io.write_point_cloud(os.path.join(scene_folder_path, "pcd", i2s(image_number) + ".pcd"), pcd)
 
-            if np.asarray(pcd.points).shape[0] == 0:
-                error_causes.append("No points in pcd: {}".format(image_number))
-                error_scene_ids.append(scene_id)
-                is_skip = True
-                continue
+
             # to merge all point clouds
             
             if global_image_number == 1:
@@ -173,11 +144,7 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
             se3s[camera_name][global_image_number] = se3
             pcd = pcd.transform(se3)
             pcds[camera_name][global_image_number] = pcd
-
-    if is_skip:
-        continue
-    else:
-        processed_scene_ids.append(scene_id)
+    
 
     scene_camera_info['0'] = scene_camera_info['1']
     scene_camera_info['-1'] = scene_camera_info['1']
@@ -209,6 +176,7 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
         for j, global_image_number in enumerate(pcds[camera_name].keys()):
             target = pcds[camera_name][global_image_number]
 
+
             if i == 0 and j == 0:
                 pcds_all_cam = target
             if j == 0:
@@ -233,24 +201,3 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
     o3d.io.write_point_cloud(os.path.join(scene_folder_path, "pcd", "000000.pcd"), pcds_all_cam)
     shutil.copy(os.path.join(scene_folder_path, "rgb", "000001.png"),  os.path.join(scene_folder_path, "rgb", "000000.png"))
     shutil.copy(os.path.join(scene_folder_path, "depth", "000001.png"),  os.path.join(scene_folder_path, "depth", "000000.png"))
-    
-    print("Error scene ids: {}".format(np.unique(error_scene_ids)))
-    print("Processed scene ids: {}".format(np.unique(processed_scene_ids)))
-    
-
-    # log processed scene_ids in processed_and_error_scenes excel
-    # append it to the excel
-    dictionary = {'processed_scene_id':  old_processed_scene_ids + processed_scene_ids, 
-                'error_scene_id': old_error_scene_ids + error_scene_ids, 
-                'error_cause':  old_error_causes + error_causes}
-    df = pd.DataFrame.from_dict(dictionary, orient='index')
-    df = df.transpose()
-    df.to_excel(os.path.join("./assets/processed_and_error_scenes.ods"), index=False)
-
-# log scene_ids as json
-with open(os.path.join("./assets/processed_scene_ids.json"), 'w') as j_file:
-    json.dump(processed_scene_ids, j_file, indent=2)
-with open(os.path.join("./assets/error_scene_ids.json"), 'w') as j_file:
-    json.dump(error_scene_ids, j_file, indent=2)
-with open(os.path.join("./assets/error_causes.json"), 'w') as j_file:
-    json.dump(error_causes, j_file, indent=2)
