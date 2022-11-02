@@ -15,7 +15,7 @@ import shutil
 
 
 
-dates = []
+dates = ["22.10.19", "22.10.20", "22.10.21", "22.10.22", "22.10.23", "22.10.24", "22.10.25", "22.10.26", "22.10.27", "22.10.28", "22.10.29", "22.10.30", "22.10.31", "22.10.19.", "22.10.20.", "22.10.21.", "22.10.22.", "22.10.23.", "22.10.24.", "22.10.25.", "22.10.26.", "22.10.27.", "22.10.28.", "22.10.29.", "22.10.30.", "22.10.31."]
 
 sch_file = 'assets/scene_info.xlsx'
 sch_data = pd.read_excel(sch_file, engine='openpyxl')
@@ -28,7 +28,7 @@ bin_scene_ids = list(range(1, 101)) + list(range(301, 401))
 shelf_scene_ids = list(range(101, 201))
 table_scene_ids = list(range(201, 301))
 bounds = {
-    "bin": [[-1.2, -0.25], [-0.4, 0.4], [-0.630, 0.0]],
+    "bin": [[-1.2, -0.25], [-0.45, 0.45], [-0.63, 0.0]],
     "shelf": [[-0.70, 0.0], [-0.6, 0.6], [-0.5, 1.0]],
     "table": [[-1.5, -0.5], [-0.6, 0.6], [-0.5, 0.5]],
 }
@@ -43,16 +43,21 @@ scene_ids = []
 envs = []
 for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
     if date in dates:
+        try: 
+            int(scene_id)
+        except:
+            continue
         scene_ids.append(int(scene_id))
         envs.append(env.lower())
-
-target_scene_ids = [445, 711, 716, 802, 890, 761]
+print( scene_ids)
+exit()
+target_scene_ids = [711]
 for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
     if scene_id in target_scene_ids:
         scene_ids.append(int(scene_id))
         envs.append(env.lower())
 
-for scene_id, env in zip(tqdm(scene_ids), envs):
+for scene_id, env in zip(tqdm(scene_ids[::-1]), envs[::-1]):
     print(scene_id)
     if "bin" in env:
         env = "bin"

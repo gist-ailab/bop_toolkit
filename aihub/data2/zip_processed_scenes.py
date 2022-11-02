@@ -6,7 +6,8 @@ import zipfile
 with open(os.path.join("./assets/processed_scene_ids.json"), 'r') as j_file:
     processed_scene_ids = json.load(j_file)
 
-zipped_file_name = "20221026_data2_real_source.zip"
+
+zipped_file_name = "20221102_data2_real_source.zip"
 # zip already processed scenes
 ood_root = os.environ['OOD_ROOT']
 
@@ -19,6 +20,3 @@ for scene_id in processed_scene_ids:
 source_paths = " ".join(source_paths)
 cmd = "zip -r {} {}".format(zipped_file_name, source_paths)
 os.system(cmd)
-
-
-

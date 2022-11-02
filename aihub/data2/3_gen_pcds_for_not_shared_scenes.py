@@ -43,7 +43,7 @@ dataset_root = os.path.join(ood_root, 'ours/data2/data2_real_source/all')
 
 camera_names = ["rs_d415", "rs_d435", "azure_kinect", "zivid"]
 bounds = {
-    "bin": [[-1.2, -0.25], [-0.4, 0.4], [-0.630, 0.0]],
+    "bin": [[-1.2, -0.25], [-0.45, 0.45], [-0.630, 0.0]],
     "shelf": [[-0.70, 0.0], [-0.6, 0.6], [-0.5, 1.0]],
     "table": [[-1.5, -0.5], [-0.6, 0.6], [-0.5, 0.5]],
 }
