@@ -27,14 +27,14 @@ if __name__ == "__main__":
     im_id = args.im_id
     is_real = args.is_real
 
-    home_path = '/home/ailab'
-    model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
+    home_path = '/home/seung'
+    model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models_original"
 
     if is_real:
         dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
         img_id_range = range(1, 53)
     else:
-        dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
+        dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_syn_raw/hope-cus-d435/train_pbr"
         img_id_range = range(0, 1000)
 
     if is_real:

@@ -5,9 +5,10 @@ import zipfile
 
 with open(os.path.join("./assets/processed_scene_ids.json"), 'r') as j_file:
     processed_scene_ids = json.load(j_file)
+processed_scene_ids = [440, 497,  680, 718, 760, 836, 888, 906, 907, 912, 976, 973, 977, 544, 597, 598]
 
 
-zipped_file_name = "20221102_data2_real_source.zip"
+zipped_file_name = "20221108_data2_real_source.zip"
 # zip already processed scenes
 ood_root = os.environ['OOD_ROOT']
 

@@ -63,7 +63,7 @@ for idx, (date, scene_id, env) in enumerate(zip(sch_data["취득 일자"], sch_d
         if idx < 1050:
             print("Nan scene: {} at {} row".format(scene_id, idx))
         continue
-    if int(scene_id) not in ignore_scene_ids:
+    if int(scene_id) not in ignore_scene_ids or scene_id in [1034, 1038, 1041]:
         scene_ids.append(int(scene_id))
         envs.append(env.lower())
 
