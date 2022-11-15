@@ -33,6 +33,7 @@ models_obj: obj (colored points + texture) for aihub submission
 - [X] Artec -> models
 - [X] Modify H of object 10, 11, 13, 18, 66, 69, 72, 75, 82
 - [ ] models -> models_anno
-- [ ] models -> models_obj
-- [ ] models -> models_eval
-- [ ] models (GraspNet) -> models_eval 
+- [X] models -> models_obj
+- [X] models -> models_eval
+- [X] calculate models_info.json
+- [ ] define obj_symmetries

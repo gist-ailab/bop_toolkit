@@ -138,7 +138,7 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
     dataset_name = 'hb'
 
   # Name of the folder with object models.
-  models_folder_name = 'models_original'
+  models_folder_name = 'models'
   if model_type is not None:
     models_folder_name += '_' + model_type
 

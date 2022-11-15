@@ -11,6 +11,8 @@ aihub_models_path = os.path.join(ood_root, "ours/data1/models")
 for obj_path in tqdm(sorted(glob.glob(artec_models_path + "/*.obj"))):
 
     obj_id = int(os.path.basename(obj_path).replace(".obj", ""))
+    if obj_id != 111:
+        continue
     ply_path = os.path.join(aihub_models_path, "obj_{:06d}.ply".format(obj_id))
     print("processing model: obj_id: {}".format(obj_id))
 
