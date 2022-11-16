@@ -34,12 +34,12 @@ for object_id, bop_name in zip(tqdm(object_ids), bop_names):
     
     # obj
     models_ori = os.path.join(ood_root, 'ours/data1/hope/models/{}.ply'.format(bop_name))
-    models_new = os.path.join(ood_root, 'ours/data1/models/obj_{:06d}.ply'.format(object_id))
+    models_new = os.path.join(ood_root, 'ours/data1/models_notaligned/obj_{:06d}.ply'.format(object_id))
     os.system('cp {} {}'.format(models_ori, models_new))
 
     # pngs 
     texture_ori = os.path.join(ood_root, 'ours/data1/hope/models/{}.png'.format(bop_name))
-    texture_new = os.path.join(ood_root, 'ours/data1/models/obj_{:06d}.png'.format(object_id))
+    texture_new = os.path.join(ood_root, 'ours/data1/models_notaligned/obj_{:06d}.png'.format(object_id))
     os.system('cp {} {}'.format(texture_ori, texture_new))
 
     # change texture path in ply
@@ -53,7 +53,7 @@ for object_id, bop_name in zip(tqdm(object_ids), bop_names):
     
     # models_info.json
     models_info_ori_path = os.path.join(ood_root, 'ours/data1/hope/models/models_info.json')
-    models_info_new_path = os.path.join(ood_root, 'ours/data1/models/models_info.json')
+    models_info_new_path = os.path.join(ood_root, 'ours/data1/models_notaligned/models_info.json')
     with open(models_info_ori_path, 'r') as f:
         models_info_ori = json.load(f)
     if not os.path.exists(models_info_new_path):
@@ -70,24 +70,24 @@ for object_id, bop_name in zip(tqdm(object_ids), bop_names):
 
     # 2. copy models_eval
 
-    # obj
-    models_eval_ori = os.path.join(ood_root, 'ours/data1/hope/models_eval/{}.ply'.format(bop_name))
-    models_eval_new = os.path.join(ood_root, 'ours/data1/models_eval/obj_{:06d}.ply'.format(object_id))
-    os.system('cp {} {}'.format(models_eval_ori, models_eval_new))
+    # # obj
+    # models_eval_ori = os.path.join(ood_root, 'ours/data1/hope/models_eval/{}.ply'.format(bop_name))
+    # models_eval_new = os.path.join(ood_root, 'ours/data1/models_eval/obj_{:06d}.ply'.format(object_id))
+    # os.system('cp {} {}'.format(models_eval_ori, models_eval_new))
 
-    # models_info.json
-    models_info_ori_path = os.path.join(ood_root, 'ours/data1/hope/models_eval/models_info.json')
-    models_info_new_path = os.path.join(ood_root, 'ours/data1/models_eval/models_info.json')
-    with open(models_info_ori_path, 'r') as f:
-        models_info_ori = json.load(f)
-    if not os.path.exists(models_info_new_path):
-        models_info_new = models_info_ori
-    else:
-        with open(models_info_new_path, 'r') as f:
-            models_info_new = json.load(f)
-        if len(models_info_new) == 0:
-            models_info_new = models_info_ori
-        else:
-            models_info_new[str(object_id)] = models_info_ori[str(int(bop_name.split('_')[1]))]
-    with open(models_info_new_path, 'w') as f:
-        json.dump(models_info_new, f, indent=4)
+    # # models_info.json
+    # models_info_ori_path = os.path.join(ood_root, 'ours/data1/hope/models_eval/models_info.json')
+    # models_info_new_path = os.path.join(ood_root, 'ours/data1/models_eval/models_info.json')
+    # with open(models_info_ori_path, 'r') as f:
+    #     models_info_ori = json.load(f)
+    # if not os.path.exists(models_info_new_path):
+    #     models_info_new = models_info_ori
+    # else:
+    #     with open(models_info_new_path, 'r') as f:
+    #         models_info_new = json.load(f)
+    #     if len(models_info_new) == 0:
+    #         models_info_new = models_info_ori
+    #     else:
+    #         models_info_new[str(object_id)] = models_info_ori[str(int(bop_name.split('_')[1]))]
+    # with open(models_info_new_path, 'w') as f:
+    #     json.dump(models_info_new, f, indent=4)

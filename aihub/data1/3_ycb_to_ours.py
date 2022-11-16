@@ -9,7 +9,7 @@ import pymeshlab
 
 ood_root = os.environ['OOD_ROOT']
 models_info = pd.read_excel("./assets/models_info.ods")
-models_path = os.path.join(ood_root, "ours/data1/models")
+models_path = os.path.join(ood_root, "ours/data1/models_notaligned")
 
 object_ids = []
 ycb_names = []

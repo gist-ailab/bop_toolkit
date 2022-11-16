@@ -10,7 +10,7 @@ ood_root = os.environ['OOD_ROOT']
 
 
 apc_models_path = os.path.join(ood_root, "ours/data1/apc_main/object_models/tarball")
-models_path = os.path.join(ood_root, "ours/data1/models")
+models_path = os.path.join(ood_root, "ours/data1/models_notaligned")
 models_info = pd.read_excel("./assets/models_info.ods")
 
 object_ids = []

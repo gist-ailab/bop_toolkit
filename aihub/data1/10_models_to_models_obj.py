@@ -19,9 +19,9 @@ for model_in_path in glob.glob(input_model_path + "/*.ply"):
   ms.save_current_mesh(model_out_path)
 
   # change the texture path in the mtl file
-  with open(mtl_out_path, 'r') as f:
-    lines = f.readlines()
   if os.path.exists(mtl_out_path) and os.path.exists(texture_out_path):
+    with open(mtl_out_path, 'r') as f:
+      lines = f.readlines()
     with open(mtl_out_path, 'w') as f:
       for idx, line in enumerate(lines):
         if idx == 6:
