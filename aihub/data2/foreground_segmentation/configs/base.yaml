@@ -1,0 +1,15 @@
+"batch_size": 8
+"maximum_epoch": 50
+"lr": 0.0001
+"wd": 0.000001
+"loss": "DiceLoss"
+"loss_kwargs":
+  {"sigmoid": True}
+"test_interval": 1000
+"visualize_interval": 10
+"log_dir": "/home/seung/Workspace/papers/2022/clora/bop_toolkit/aihub/data2/foreground_segmentation/output"
+"dataset_path": "/media/seung/170d6766-97d9-4917-8fc6-7d6ae84df896/bop_data/aihub1/train_pbr"
+"img_size": [224, 224] # width, height
+"arch": "DeeplabV3"
+"encoder_name": "resnet50" # timm
+"ckpt_path": "/home/vision/catkin_ws/src/sop-perception/robot-in-hand-seg/ckpts/epoch_42.pkl"

@@ -96,7 +96,9 @@ for scene_id in tqdm(scene_ids):
 
             # crop roi regions
             contours, _ = cv2.findContours(visible_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            x, y, w, h = cv2.boundingRect(contours[0])
+            try:
+                x, y, w, h = cv2.boundingRect(contours[0])
+            except
             w_offset = int(w * 0.1)
             h_offset = int(h * 0.1)
             roi_xyxy = [x-w_offset, y-h_offset, x+w+w_offset, y+h+h_offset]
