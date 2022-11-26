@@ -13,6 +13,7 @@ from bop_toolkit_lib import misc
 from bop_toolkit_lib import renderer
 from bop_toolkit_lib import visualization
 
+from tqdm import tqdm
 
 # PARAMETERS.
 ################################################################################
@@ -21,7 +22,7 @@ p = {
   'dataset': 'tless',
 
   # Dataset split. Options: 'train', 'val', 'test'.
-  'dataset_split': 'test',
+  'dataset_split': 'train',
 
   # Dataset split type. None = default. See dataset_params.py for options.
   'dataset_split_type': None,
@@ -57,7 +58,7 @@ p = {
   'renderer_type': 'cpp',  # Options: 'vispy', 'cpp', 'python'.
 
   # Folder containing the BOP datasets.
-  'datasets_path': '/OccludedObjectDataset/BOP',
+  'datasets_path': '/home/seung/OccludedObjectDataset/BOP',
 
   # Folder for output visualisations.
   'vis_path': os.path.join(config.output_path, 'vis_gt_poses'),
@@ -127,7 +128,9 @@ for obj_id in dp_model['obj_ids']:
 scene_ids = dataset_params.get_present_scene_ids(dp_split)
 depth_diff_all = np.array([])
 depth_diff_abs_all = np.array([])
-for scene_id in scene_ids:
+n_pixels = 0
+n_outliers = 0
+for scene_id in tqdm(scene_ids):
 
   # Load scene info and ground-truth poses.
   scene_camera = inout.load_scene_camera(
@@ -204,13 +207,30 @@ for scene_id in scene_ids:
         scene_id=scene_id, im_id=im_id)
 
     # Visualization.
-    depth_diff, depth_diff_abs = visualization.eval_object_poses(
+    depth_diff, depth_diff_abs, n_pixel, n_outlier = visualization.eval_object_poses(
       poses=gt_poses, K=K, renderer=ren, rgb=rgb, depth=depth,
       vis_rgb_path=vis_rgb_path, vis_depth_diff_path=vis_depth_diff_path,
       vis_rgb_resolve_visib=p['vis_rgb_resolve_visib'],
       delta = 50)
     depth_diff_all = np.concatenate((depth_diff_all, depth_diff))
     depth_diff_abs_all = np.concatenate((depth_diff_abs_all, depth_diff_abs))
+    n_pixels += n_pixel
+    n_outliers += n_outlier
+    if im_counter % 10 == 0:
+      # save the depth_diff and depth_diff_abs
+      np.save('stats/depth_diff_{}_{}.npy'.format(p['dataset'], p['dataset_split']), depth_diff_all)
+      np.save('stats/depth_diff_abs_{}_{}.npy'.format(p['dataset'], p['dataset_split']), depth_diff_abs_all)
+      np.save('stats/n_pixels_{}_{}.npy'.format(p['dataset'], p['dataset_split']), n_pixels)
+      np.save('stats/n_outliers_{}_{}.npy'.format(p['dataset'], p['dataset_split']), n_outliers)
+
+      print('Dataset: {}, split: {}'.format(p['dataset'], p['dataset_split']))
+      print('---------------------')
+      print('Mean   delta    : {:.2f}'.format(np.mean(depth_diff_all)))
+      print('Std    delta    : {:.2f}'.format(np.std(depth_diff_all)))
+      print('Mean   abs delta: {:.2f}'.format(np.mean(depth_diff_abs_all)))
+      print('Median abs delta: {:.2f}'.format(np.median(depth_diff_abs_all)))
+      print('Std    abs delta: {:.2f}'.format(np.std(depth_diff_abs_all)))
+      print('Outlier ratio   : {:.2f}'.format(n_outliers/n_pixels*100))
 
 print('Dataset: {}, split: {}'.format(p['dataset'], p['dataset_split']))
 print('---------------------')
@@ -219,5 +239,5 @@ print('Std    delta    : {:.2f}'.format(np.std(depth_diff_all)))
 print('Mean   abs delta: {:.2f}'.format(np.mean(depth_diff_abs_all)))
 print('Median abs delta: {:.2f}'.format(np.median(depth_diff_abs_all)))
 print('Std    abs delta: {:.2f}'.format(np.std(depth_diff_abs_all)))
-
+print('Outlier ratio   : {:.2f}'.format(n_outliers/n_pixels*100))
 misc.log('Done.')

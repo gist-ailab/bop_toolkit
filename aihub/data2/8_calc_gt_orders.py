@@ -34,13 +34,13 @@ if __name__ == "__main__":
         dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
         img_id_range = range(1, 53)
     else:
-        dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_syn_source/train_pbr"
+        dataset_path = f"/media/seung/170d6766-97d9-4917-8fc6-7d6ae84df896/bop_data/aihub1/train_pbr"
         img_id_range = range(0, 1000)
 
     # path
     scene_ids = sorted([int(x) for x in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, x))])
     new_scene_ids = []
-    for scene_id in scene_ids[200:236]:
+    for scene_id in scene_ids:
         if is_real:
             scene_gt_path = os.path.join(dataset_path, "{:06d}".format(scene_id), "scene_gt_{:06d}.json".format(scene_id))
         else:
@@ -68,4 +68,4 @@ if __name__ == "__main__":
             if is_real:
                 os.system("/home/ailab/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --is_real --scene_id {} --im_id {}".format(scene_id, im_id))
             else:
-                os.system("/home/ailab/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --scene_id {} --im_id {}".format(scene_id, im_id))
+                os.system("/home/seung/anaconda3/envs/bop_toolkit/bin/python aihub/data2/calc_gt_orders.py --scene_id {} --im_id {}".format(scene_id, im_id))

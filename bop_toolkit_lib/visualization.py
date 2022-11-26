@@ -237,7 +237,7 @@ def vis_object_poses(
 
 def eval_object_poses(
       poses, K, renderer, rgb=None, depth=None, vis_rgb_path=None,
-      vis_depth_diff_path=None, vis_rgb_resolve_visib=False, delta=15):
+      vis_depth_diff_path=None, vis_rgb_resolve_visib=False, delta=50):
   """Visualizes 3D object models in specified poses in a single image.
 
   Two visualizations are created:
@@ -357,10 +357,15 @@ def eval_object_poses(
 
     # Calculate the depth difference at pixels where both depth maps are valid.
     valid_mask = (depth > 0) * (ren_depth > 0)
-    depth_diff = valid_mask * (ren_depth.astype(np.float32) - depth)
-    depth_diff[depth_diff > delta] = 0
-    valid_mask[depth_diff > delta] = 0
-    depth_diff_abs = np.abs(depth_diff)
+    depth_diff = valid_mask * (depth - ren_depth.astype(np.float32))
+
+    n_pixels = np.sum(valid_mask)
+    # leave out the pixels with depth difference larger than delta
+    valid_mask = valid_mask * (np.abs(depth_diff) < delta)
+    depth_diff_valid = depth_diff[valid_mask]
+    n_outlier_pixels = n_pixels - np.sum(valid_mask)
+    depth_diff_abs_valid = np.abs(depth_diff_valid.copy())
+    # print(np.unique(depth_diff_valid), n_pixels, n_outlier_pixels, delta)
 
     # Get mask of pixels where the rendered depth is at most by the tolerance
     # delta behind the captured depth (this tolerance is used in VSD).
@@ -375,8 +380,6 @@ def eval_object_poses(
       [below_delta_vis, depth_diff_vis, depth_diff_vis]).astype(np.uint8)
 
     depth_diff_vis[np.logical_not(valid_mask)] = 0
-    depth_diff_valid = depth_diff[valid_mask]
-    depth_diff_abs_valid = depth_diff_abs[valid_mask]
     depth_info = [
       {'name': 'mean diff', 'fmt': ':.3f', 'val': np.mean(depth_diff_valid)},
       {'name': 'median diff', 'fmt': ':.3f', 'val': np.median(depth_diff_valid)},
@@ -385,4 +388,4 @@ def eval_object_poses(
     ]
     depth_diff_vis = write_text_on_image(depth_diff_vis, depth_info)
     inout.save_im(vis_depth_diff_path, depth_diff_vis)
-    return depth_diff_valid, depth_diff_abs_valid
+    return depth_diff_valid, depth_diff_abs_valid, n_pixels, n_outlier_pixels

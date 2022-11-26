@@ -3,6 +3,8 @@ import glob
 import pymeshlab
 from tqdm import tqdm
 
+# Warning: Axis of object 134 should be manually fixed.
+
 ood_root = os.environ['OOD_ROOT']
 
 artec_models_path = os.path.join(ood_root, "ours/data1/artec")

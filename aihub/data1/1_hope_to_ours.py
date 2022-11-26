@@ -3,6 +3,7 @@ import os
 import json 
 import pandas as pd
 from tqdm import tqdm
+import pymeshlab
 ood_root = os.environ['OOD_ROOT']
 
 models_info = pd.read_excel("./assets/models_info.ods")
@@ -67,6 +68,14 @@ for object_id, bop_name in zip(tqdm(object_ids), bop_names):
             models_info_new[str(object_id)] = models_info_ori[str(int(bop_name.split('_')[1]))]
     with open(models_info_new_path, 'w') as f:
         json.dump(models_info_new, f, indent=4)
+
+    ms = pymeshlab.MeshSet()
+    ms.load_new_mesh(models_new)
+    ms.apply_filter('compute_matrix_from_rotation', rotaxis = 'X axis', angle=-90)
+    ms.apply_filter('compute_matrix_from_rotation', rotaxis = 'Y axis', angle=-90)
+    ms.save_current_mesh(models_new, save_vertex_color=False, save_vertex_normal=True, save_face_color=False, save_wedge_texcoord=False, binary=False)
+
+
 
     # 2. copy models_eval
 

@@ -49,7 +49,7 @@ for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number
         scene_ids.append(int(scene_id))
         envs.append(env.lower())
 
-target_scene_ids = [784]
+target_scene_ids = list(range(1, 1051))
 for date, scene_id, env in zip(sch_data["취득 일자"], sch_data["scene_number"], sch_data["환경"]):
     if scene_id in target_scene_ids:
         scene_ids.append(int(scene_id))
@@ -124,13 +124,13 @@ for scene_id, env in zip(tqdm(scene_ids), envs):
             se3[:3, :3] = cam_R_w2c
             se3[:3, 3] = cam_t_w2c * 0.001
             pcd = pcd.transform(se3)
-            min_bound = np.array([bound[0][0], bound[1][0], bound[2][0]])
-            max_bound = np.array([bound[0][1], bound[1][1], bound[2][1]])
-            pcd = pcd.crop(o3d.geometry.AxisAlignedBoundingBox(min_bound, max_bound))
+            # min_bound = np.array([bound[0][0], bound[1][0], bound[2][0]])
+            # max_bound = np.array([bound[0][1], bound[1][1], bound[2][1]])
+            # pcd = pcd.crop(o3d.geometry.AxisAlignedBoundingBox(min_bound, max_bound))
 
-            std = 0.5 if scene_id < 100 else 1.0
-            cl, ind = pcd.remove_statistical_outlier(nb_neighbors=20, std_ratio=1.5)
-            pcd = pcd.select_by_index(ind)
+            # std = 0.5 if scene_id < 100 else 1.0
+            # cl, ind = pcd.remove_statistical_outlier(nb_neighbors=20, std_ratio=1.5)
+            # pcd = pcd.select_by_index(ind)
 
             if not pcd.has_normals():
                 pcd.estimate_normals()

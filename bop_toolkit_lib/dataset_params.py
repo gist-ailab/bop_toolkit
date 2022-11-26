@@ -72,11 +72,7 @@ def get_model_params(datasets_path, dataset_name, model_type=None):
   :return: Dictionary with object model parameters for the specified dataset.
   """
 
-  gist_obj_ids = list(range(1, 84))
-  gist_obj_ids.remove(9)
-  gist_obj_ids.remove(55)
-  gist_obj_ids.remove(57)
-  gist_obj_ids.remove(68)
+  gist_obj_ids = list(range(1, 201))
 
   # Object ID's.
   obj_ids = {
@@ -199,13 +195,13 @@ def get_split_params_clora(datasets_path, dataset_name, split, split_type=None):
 
   if dataset_name == 'data2_real_source':
       p['scene_ids'] = {
-        'train': list(range(1, 111)),
-        'val': list(range(1, 111)),
-        'test': list(range(1, 111)),
-        'all': list(range(1, 111)),
+        'train': list(range(1, 1051)),
+        'val': list(range(1, 1051)),
+        'test': list(range(1, 1051)),
+        'all': list(range(1, 1051)),
       }[split]
 
-      p['im_size'] = (1920, 1080) #!TODO: check this
+      p['im_size'] = (1920, 1200) #!TODO: check this
 
       if split == 'test':
         p['depth_range'] = None  # Not calculated yet.

@@ -9,13 +9,13 @@ from bop_toolkit_lib import misc
 
 import os
 import glob
-
+from tqdm import tqdm
 
 ood_root = os.environ['OOD_ROOT']
 input_model_path = os.path.join(ood_root, "ours/data1/models")
 
 models_info = {}
-for model_in_path in glob.glob(input_model_path + "/*.ply"):
+for model_in_path in tqdm(glob.glob(input_model_path + "/*.ply")):
     
     obj_id = os.path.basename(model_in_path).split("_")[-1].split(".")[0]
     misc.log('Processing model of object {}...'.format(obj_id))

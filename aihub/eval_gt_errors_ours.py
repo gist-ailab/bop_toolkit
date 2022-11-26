@@ -14,6 +14,8 @@ from bop_toolkit_lib import renderer
 from bop_toolkit_lib import visualization
 
 
+ood_root = os.environ['OOD_ROOT']
+
 # PARAMETERS.
 ################################################################################
 p = {
@@ -57,7 +59,7 @@ p = {
   'renderer_type': 'cpp',  # Options: 'vispy', 'cpp', 'python'.
 
   # Folder containing the BOP datasets.
-  'datasets_path': '/OccludedObjectDataset/ours/data2',
+  'datasets_path': os.path.join(ood_root, 'ours/data2'),
 
   # Folder for output visualisations.
   'vis_path': os.path.join(config.output_path, 'vis_gt_poses'),
@@ -68,8 +70,11 @@ p = {
   'vis_depth_diff_tpath': os.path.join(
     '{vis_path}', '{dataset}', '{split}', '{scene_id:06d}',
     '{im_id:06d}_depth_diff.jpg'),
+
 }
 ################################################################################
+scene_ids = [int(x) for x in range(1, 2)]
+cam_idx = 1
 
 
 # Load dataset parameters.
@@ -110,26 +115,36 @@ if p['vis_depth_diff'] or (p['vis_rgb'] and p['vis_rgb_resolve_visib']):
 renderer_mode = '+'.join(renderer_modalities)
 
 # Create a renderer.
-width, height = dp_split['im_size']
+if cam_idx == 1 or cam_idx == 2:
+  width, height= 1920, 1080
+elif cam_idx == 3:
+  width, height = 3840, 2160
+elif cam_idx == 0:
+  width, height = 1920, 1200
+
 ren = renderer.create_renderer(
   width, height, p['renderer_type'], mode=renderer_mode, shading='flat')
+
 
 # Load object models.
 models = {}
 for obj_id in dp_model['obj_ids']:
+  if obj_id > 82:
+    continue
   misc.log('Loading 3D model of object {}...'.format(obj_id))
   model_path = dp_model['model_tpath'].format(obj_id=obj_id)
   # !TODO: Use the models_eval for ours
-  model_path = os.path.join('/OccludedObjectDataset/ours/data1/models_original', os.path.basename(model_path))
+  model_path = os.path.join(ood_root, 'ours/data1/models', os.path.basename(model_path))
   model_color = None
   if not p['vis_orig_color']:
     model_color = tuple(colors[(obj_id - 1) % len(colors)])
   ren.add_object(obj_id, model_path, surf_color=model_color)
-scene_ids = dataset_params.get_present_scene_ids(dp_split)
+
+
 depth_diff_all = np.array([])
 depth_diff_abs_all = np.array([])
-
-scene_ids = [int(x) for x in range(1, 10)]
+n_pixels = 0
+n_outliers = 0
 
 for scene_id in scene_ids:
 
@@ -139,12 +154,10 @@ for scene_id in scene_ids:
   scene_camera = inout.load_scene_camera(
     dp_split['scene_camera_tpath'].format(scene_id=scene_id))
 
-  scene_gt_path = dp_split['scene_gt_tpath'].format(scene_id=scene_id)
+  scene_gt_path = os.path.join(ood_root, 'ours/data2', p['dataset'], p['dataset_split'], '{0:06d}'.format(scene_id), 'scene_gt_aligned_icp_{0:06d}.json'.format(scene_id))
   if not os.path.exists(scene_gt_path):
     continue
-  dp_split['scene_gt_tpath'] = dp_split['scene_gt_tpath'].replace('scene_gt.json', 'scene_gt_{:06d}.json'.format(scene_id))
-  scene_gt = inout.load_scene_gt(
-    dp_split['scene_gt_tpath'].format(scene_id=scene_id))
+  scene_gt = inout.load_scene_gt(scene_gt_path)
 
   # List of considered images.
   if scene_im_ids is not None:
@@ -155,10 +168,10 @@ for scene_id in scene_ids:
     im_ids = set(im_ids).intersection(p['im_ids'])
   # Render the object models in the ground-truth poses in the selected images.
   for im_counter, im_id in enumerate(im_ids):
-    if int(im_id) <0:
-      continue
     
-    if im_id % 4 != 1:
+    if int(im_id) < 1:
+      continue
+    if im_id % 4 != cam_idx:
       continue
 
     if im_counter % 10 == 0:
@@ -203,8 +216,10 @@ for scene_id in scene_ids:
     if p['vis_depth_diff'] or (p['vis_rgb'] and p['vis_rgb_resolve_visib']):
       depth = inout.load_depth(dp_split['depth_tpath'].format(
         scene_id=scene_id, im_id=im_id))
-      depth *= scene_camera[im_id]['depth_scale']  # Convert to [mm].
-
+      if cam_idx in [0, 3]:
+        depth /= scene_camera[im_id]['depth_scale']  # Convert to [mm].
+      else:
+        depth *= scene_camera[im_id]['depth_scale']  # Convert to [mm].
     # Path to the output RGB visualization.
     vis_rgb_path = None
     if p['vis_rgb']:
@@ -220,20 +235,35 @@ for scene_id in scene_ids:
         scene_id=scene_id, im_id=im_id)
 
     # Visualization.
-    depth_diff, depth_diff_abs = visualization.eval_object_poses(
+    depth_diff, depth_diff_abs, n_pixel, n_outlier = visualization.eval_object_poses(
       poses=gt_poses, K=K, renderer=ren, rgb=rgb, depth=depth,
       vis_rgb_path=vis_rgb_path, vis_depth_diff_path=vis_depth_diff_path,
       vis_rgb_resolve_visib=p['vis_rgb_resolve_visib'],
       delta = 50)
     depth_diff_all = np.concatenate((depth_diff_all, depth_diff))
     depth_diff_abs_all = np.concatenate((depth_diff_abs_all, depth_diff_abs))
+    n_pixels += n_pixel
+    n_outliers += n_outlier
+
+
+    print('Dataset: {}, split: {}'.format(p['dataset'], p['dataset_split']))
+    print('Scene id {} to {}, camera idx {}'.format(scene_id, scene_ids[-1], cam_idx))
+    print('---------------------')
+    print('Mean   delta    : {:.2f}'.format(np.mean(depth_diff_all)))
+    print('Std    delta    : {:.2f}'.format(np.std(depth_diff_all)))
+    print('Mean   abs delta: {:.2f}'.format(np.mean(depth_diff_abs_all)))
+    print('Median abs delta: {:.2f}'.format(np.median(depth_diff_abs_all)))
+    print('Std    abs delta: {:.2f}'.format(np.std(depth_diff_abs_all)))
+    print('Outlier ratio   : {:.2f}'.format(n_outliers/n_pixels*100))
+
 
 print('Dataset: {}, split: {}'.format(p['dataset'], p['dataset_split']))
+print('Scene id {} to {}, camera idx {}'.format(scene_id, scene_ids[-1], cam_idx))
 print('---------------------')
 print('Mean   delta    : {:.2f}'.format(np.mean(depth_diff_all)))
 print('Std    delta    : {:.2f}'.format(np.std(depth_diff_all)))
 print('Mean   abs delta: {:.2f}'.format(np.mean(depth_diff_abs_all)))
 print('Median abs delta: {:.2f}'.format(np.median(depth_diff_abs_all)))
 print('Std    abs delta: {:.2f}'.format(np.std(depth_diff_abs_all)))
-
+print('Outlier ratio   : {:.2f}'.format(n_outliers/n_pixels*100))
 misc.log('Done.')

@@ -5,6 +5,7 @@ bop_renderer/
 __pycache__/
 *.py[cod]
 *$py.class
+stats/
 
 # C extensions
 *.so

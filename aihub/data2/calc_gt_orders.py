@@ -28,13 +28,13 @@ if __name__ == "__main__":
     is_real = args.is_real
 
     home_path = '/home/seung'
-    model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models_original"
+    model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
 
     if is_real:
         dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
         img_id_range = range(1, 53)
     else:
-        dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_syn_raw/hope-cus-d435/train_pbr"
+        dataset_path = f"/media/seung/170d6766-97d9-4917-8fc6-7d6ae84df896/bop_data/aihub1/train_pbr"
         img_id_range = range(0, 1000)
 
     if is_real:
