@@ -19,6 +19,7 @@ from adet.utils.post_process import detector_postprocess, DefaultPredictor
 import cv2
 import numpy as np
 import torch
+import segmentation_models_pytorch as smp
 
 def normalize_depth(depth, min_val=250.0, max_val=1500.0):
     """ normalize the input depth (mm) and return depth image (0 ~ 255)
@@ -72,6 +73,51 @@ def inpaint_depth(depth, factor=1, kernel_size=3, dilate=False):
     inpainted_data = cv2.resize(inpainted_data, (W, H))
     depth = np.where(depth == 0, inpainted_data, depth)
     return depth
+
+def load_segm_model():
+
+    model = smp.create_model(
+            arch = "DeepLabV3",
+            encoder_name = "resnet50",
+            in_channels = 3,
+            classes = 2)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.device_count() > 1:
+        print("Using {} gpu!".format(torch.cuda.device_count()))
+    model = model.to(device)
+    model = torch.nn.DataParallel(model)
+    checkpoint = torch.load("/home/seung/Workspace/papers/2022/clora/bop_toolkit/aihub/data2/foreground_segmentation/output/itr_53000.pkl")
+    model.load_state_dict(checkpoint)
+    model = model.eval()
+    return model
+
+from torchvision.transforms import Normalize, Compose
+normalize = Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+
+
+def infer_segm_mask(segm_model, rgb):
+
+    device = pyredner.get_device()
+    h, w = rgb.shape[:2]
+    input = cv2.resize(rgb.copy(), (224, 224))
+    input = torch.tensor(np.transpose(input, (2, 0, 1)), dtype=torch.float32)
+    input = normalize(input).unsqueeze(0)
+    input = input.to(device)
+    pred = segm_model(input)
+    pred = torch.sigmoid(pred)
+    pred = torch.argmax(pred, dim=1).unsqueeze(0)
+    # resize
+    pred = pred[0].permute(1, 2, 0)
+    pred = pred.detach().cpu().numpy()
+    pred = np.uint8(np.repeat(pred, 3, axis=-1)*255)
+    pred = cv2.resize(pred, (w, h), interpolation=cv2.INTER_CUBIC)
+    pred = np.uint8(pred > 128)
+    # print(rgb.shape, pred.shape)
+    # pred_on_input = cv2.addWeighted(rgb, 0.5, pred, 0.5, 0)
+
+    # vis_all = np.hstack([rgb, pred_on_input, pred])
+    return pred
+
 
 
 ood_root = os.environ['OOD_ROOT']
@@ -148,28 +194,6 @@ def gen_amodal_mask(width, height, cam_K, object_mesh):
     mask = np.where(mask_init[:, :, 0] > 125, 255, 0)
     mask = mask.astype(np.uint8)
     return mask
-
-# import sys
-# sys.path.append(os.getcwd().replace("tools", ""))
-# from ldet.engine import add_copypaste_config
-# from ldet.data import CopyPasteMapper, build_detection_test_loader, build_detection_train_loader
-# from ldet.evaluation import COCOEvaluator,  inference_on_dataset
-# from ldet.modeling import build_model
-# logger = logging.getLogger("openworld")
-# from PIL import ImageFile
-# ImageFile.LOAD_TRUNCATED_IMAGES = True
-# from detectron2.engine import default_argument_parser, default_setup, launch
-
-# def run_ldet(rgb_img):
-
-#     cfg = get_cfg()
-#     add_copypaste_config(cfg)
-#     cfg.merge_from_file('/home/seung/Workspace/papers/2022/clora/bop_toolkit/openworld_ldet/configs/COCO/mask_rcnn_R_50.yaml')
-#     # cfg.merge_from_list(args.opts)
-#     cfg.freeze()
-#     default_setup(
-#         cfg, args
-#     )
 
 def run_uoais(rgb_img, depth_img):
 
@@ -263,3 +287,14 @@ class DiffRenderer:
                 img = pyredner.render_g_buffer(scene, channels= [pyredner.channels.alpha])
             imgs[target] = img
         return imgs
+
+
+def dice_loss(img1, img2):
+    # img1: torch tensor, img2: torch tensor
+    # calculate dice loss
+    smooth = 1.
+    img1 = img1.view(-1)
+    img2 = img2.view(-1)
+    intersection = (img1 * img2).sum()
+    return 1 - ((2. * intersection + smooth) / (img1.sum() + img2.sum() + smooth))
+

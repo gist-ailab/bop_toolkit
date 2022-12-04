@@ -28,13 +28,13 @@ if __name__ == "__main__":
     is_real = args.is_real
 
     home_path = '/home/seung'
-    model_path = f"{home_path}/OccludedObjectDataset/ours/data1/models"
+    model_path = f"{home_path}/OccludedObjectDatasets/ours/data1/models_obj"
 
     if is_real:
         dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_real_source/all"
         img_id_range = range(1, 53)
     else:
-        dataset_path = f"/media/seung/170d6766-97d9-4917-8fc6-7d6ae84df896/bop_data/aihub1/train_pbr"
+        dataset_path = f"/media/seung/2e3dd91f-a254-4386-acaf-f3a4d85cb4b6/aihub/train_pbr"
         img_id_range = range(0, 1000)
 
     if is_real:
@@ -68,18 +68,16 @@ if __name__ == "__main__":
     obj_geometries = {}
     obj_depths = {}
     for i, obj in enumerate(anno_obj):
-        translation = np.array(np.array(obj['cam_t_m2c']), dtype=np.float64) / 1000  # convert to meter
+        translation = np.array(np.array(obj['cam_t_m2c']), dtype=np.float64) 
         orientation = np.array(np.array(obj['cam_R_m2c']), dtype=np.float64)
         transform = np.concatenate((orientation.reshape((3, 3)), translation.reshape(3, 1)), axis=1)
         transform_cam_to_obj = np.concatenate(
             (transform, np.array([0, 0, 0, 1]).reshape(1, 4)))  # homogeneous transform
         # load pointcloud (.ply)
-        obj_geometry = o3d.io.read_point_cloud(
-            os.path.join(model_path, 'obj_' + f"{int(obj['obj_id']):06}" + '.ply'))
-        obj_geometry.points = o3d.utility.Vector3dVector(
-            np.array(obj_geometry.points) / 1000)  # convert mm to meter
-        # move object
-        obj_geometry.transform(transform_cam_to_obj)
+        obj_geometry = o3d.io.read_triangle_mesh(
+            os.path.join(model_path, 'obj_' + f"{int(obj['obj_id']):06}" + '.obj'))
+        obj_geometry = obj_geometry.transform(transform_cam_to_obj)
+        obj_geometry = obj_geometry.scale(0.001, center=[0, 0, 0])  # convert to meter
         # save in dictionary
         obj_geometries[i] = obj_geometry
         obj_depths[i] = [obj_geometry.get_min_bound()[2], obj_geometry.get_max_bound()[2]]
@@ -92,12 +90,14 @@ if __name__ == "__main__":
     # black background color
     render.scene.set_background([0, 0, 0, 1])
     render.scene.set_lighting(render.scene.LightingProfile.NO_SHADOWS, [0,0,0])
-    
 
-    obj_mtl = o3d.visualization.rendering.MaterialRecord()
-    obj_mtl.base_color = [1.0, 1.0, 1.0, 1.0]
-    obj_mtl.shader = "defaultUnlit"
-    obj_mtl.point_size = 10.0
+    target_obj_mtl = o3d.visualization.rendering.MaterialRecord()
+    target_obj_mtl.base_color = [1.0, 1.0, 1.0, 1.0]
+    target_obj_mtl.shader = "defaultUnlit"
+
+    other_obj_mtl = o3d.visualization.rendering.MaterialRecord()
+    other_obj_mtl.base_color = [0.0, 0.0, 0.0, 1.0]
+    other_obj_mtl.shader = "defaultUnlit"
 
     # initialize occlusion & depth order (n x n matrix)
     occ_mat = np.zeros((len(obj_geometries), len(obj_geometries)))
@@ -106,14 +106,13 @@ if __name__ == "__main__":
     is_overlap_matrix = np.zeros((len(obj_geometries), len(obj_geometries))) 
     obj_ids = list(obj_geometries.keys()) 
 
-
     cam_K = anno_cam["cam_K"]
     intrinsic = np.array(cam_K).reshape((3, 3))
     extrinsic = np.array([[1, 0, 0, 0],
                         [0, 1, 0 ,0],
                         [0, 0, 1, 0],
                         [0, 0, 0, 1]])
-    render_width = 640
+    render_width = 320
     ratio = render_width / img_w
     render_height = int(img_h * ratio)
     render.setup_camera(intrinsic, extrinsic, render_width, render_height)
@@ -141,12 +140,14 @@ if __name__ == "__main__":
 
         # set target i object as [1,0,0]
         obj_geometry = obj_geometries[idx_A]
-        color = [1, 0, 0]
+        color = [1, 1, 1]
         obj_geometry.paint_uniform_color(color)
         render.scene.add_geometry(
                         "obj_{}".format(idx_A), obj_geometry, 
-                        obj_mtl,  add_downsampled_copy_for_fast_rendering=True)
+                        target_obj_mtl)
         mask_A = np.array(render.render_to_image())
+        mask_A = np.where(mask_A[:, :, 0] > 125, 255, 0)
+        mask_A = mask_A.astype(np.uint8)
 
         for idx_B in obj_ids:
             if idx_A == idx_B: continue
@@ -176,25 +177,16 @@ if __name__ == "__main__":
             obj_geometry.paint_uniform_color(color)
             render.scene.add_geometry(
                             "obj_{}".format(idx_B), obj_geometry, 
-                            obj_mtl,  add_downsampled_copy_for_fast_rendering=True)
+                            other_obj_mtl)
             mask_A_B = np.array(render.render_to_image())
+            mask_A_B = np.where(mask_A_B[:, :, 0] > 125, 255, 0)
+            mask_A_B = mask_A_B.astype(np.uint8)
 
-            # count area
-            
-            cnd_r = mask_A[:, :, 0] != 0
-            cnd_g = mask_A[:, :, 1] == 0
-            cnd_b = mask_A[:, :, 2] == 0
-            cnd_init = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
-            cnd_init = fill_hole(cnd_init)
+            # cv2.imwrite("masks/mask_A_B_{}_{}.png".format(idx_A, idx_B), mask_A_B)
 
-            cnd_r = mask_A_B[:, :, 0] != 0
-            cnd_g = mask_A_B[:, :, 1] == 0
-            cnd_b = mask_A_B[:, :, 2] == 0
-            cnd_sum = np.bitwise_and(np.bitwise_and(cnd_r, cnd_g), cnd_b)
-            cnd_sum = fill_hole(cnd_sum)
 
-            num_init = np.count_nonzero(cnd_init)
-            num_sum = np.count_nonzero(cnd_sum)
+            num_init = np.count_nonzero(mask_A)
+            num_sum = np.count_nonzero(mask_A_B)
             if num_init == 0 or num_sum == 0: 
                 render.scene.clear_geometry()
                 continue

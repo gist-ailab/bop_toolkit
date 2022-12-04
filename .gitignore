@@ -6,6 +6,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 stats/
+masks/
+output/
+
 
 # C extensions
 *.so

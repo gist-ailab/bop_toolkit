@@ -662,7 +662,7 @@ class DiceCELoss(_Loss):
             target = torch.squeeze(target, dim=1)
         target = target.long()
         ce_loss = self.cross_entropy(input, target)
-        total_loss: torch.Tensor = dice_loss + ce_loss
+        total_loss: torch.Tensor = dice_loss + cne_loss
         return total_loss
 
 

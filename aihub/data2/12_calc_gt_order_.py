@@ -4,10 +4,6 @@ import os
 from tqdm import tqdm
 import argparse
 
-def fill_hole(cnd_target):
-    cnd_target = cv2.morphologyEx(cnd_target.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3,3), np.uint8), None, None, 1, cv2.BORDER_REFLECT101)
-    return cnd_target
-
 
 if __name__ == "__main__":
 
@@ -22,9 +18,8 @@ if __name__ == "__main__":
 
     home_path = '/'
 
-    dataset_path = f"{home_path}/OccludedObjectDataset/ours/data2/data2_syn_raw/ycb-cus-d435/train_pbr"
     img_id_range = range(0, 1000)
-    scene_ids =  list(range(40, 50))
+    scene_ids =  list(range(20, 30))
     for scene_id in tqdm(scene_ids):
         print("Process scene {} [from {} to {}]".format(scene_id, scene_ids[0], scene_ids[-1]))
         for im_id in tqdm(img_id_range):

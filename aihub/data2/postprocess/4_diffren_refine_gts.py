@@ -26,12 +26,21 @@ import matplotlib.pyplot as plt
 import skimage
 from aihub.data2.postprocess.utils import *
 
+#! TODO: check wheter rgb texture is correctly loaded in pyredner
+#! TODO: joint optimization for multiple viewpoints
+#! TODO: joint optimization for multiple camera
+#! TODO: converts translation, euler angle to bop_format
+#! TODO"
+
+
+
 ood_root = os.environ['OOD_ROOT']
 dataset_root = os.path.join(ood_root, 'ours/data2/data2_real_source/all')
 
 scene_ids = list(range(1, 11))
 im_ids = list(range(1, 53))
 
+segm_model = load_segm_model()
 
 for scene_id in tqdm(scene_ids):
     scene_gt_path = os.path.join(dataset_root, f"{scene_id:06d}", "scene_gt_aligned_c1p1_{0:06d}.json".format(scene_id))
@@ -61,18 +70,10 @@ for scene_id in tqdm(scene_ids):
         height, width = rgb_im.shape[:2]
         cam_K = np.array(scene_camera[str(im_id)]['cam_K']).reshape(3, 3)
         visible_masks = gen_visible_masks(width, height, cam_K, im_gts)
-        uoais_masks = run_uoais(rgb_im, depth_im)
-        # reshape with (height, width)
-        _uoais_masks = []
-        for idx in range(uoais_masks.shape[0]):
-            uoais_mask = np.uint8(uoais_masks[idx]*255)
-            uoais_mask = cv2.resize(uoais_mask, (width, height), interpolation=cv2.INTER_NEAREST)
-            _uoais_masks.append(uoais_mask)
-        uoais_masks = _uoais_masks
 
         for idx, obj_gt in enumerate(im_gts):
 
-            if idx < 4:
+            if idx < 13:
                 continue
 
             # load gts
@@ -95,10 +96,10 @@ for scene_id in tqdm(scene_ids):
             visible_mask = visible_masks["object_{}_{}".format(obj_id, inst_id)]
 
             # crop roi regions
-            contours, _ = cv2.findContours(visible_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            try:
-                x, y, w, h = cv2.boundingRect(contours[0])
-            except
+            ys, xs = np.where(visible_mask)
+            min_x, max_x = np.min(xs), np.max(xs)
+            min_y, max_y = np.min(ys), np.max(ys)
+            x, y, w, h = min_x, min_y, max_x - min_x, max_y - min_y
             w_offset = int(w * 0.1)
             h_offset = int(h * 0.1)
             roi_xyxy = [x-w_offset, y-h_offset, x+w+w_offset, y+h+h_offset]
@@ -107,17 +108,10 @@ for scene_id in tqdm(scene_ids):
             # get roi's rgb, depth, mask
             rgb_roi = rgb_im[roi_xyxy[1]:roi_xyxy[3], roi_xyxy[0]:roi_xyxy[2], :]
             depth_roi = depth_im[roi_xyxy[1]:roi_xyxy[3], roi_xyxy[0]:roi_xyxy[2]]
-            visible_mask_roi = visible_mask[roi_xyxy[1]:roi_xyxy[3], roi_xyxy[0]:roi_xyxy[2]]
+            segm_mask_roi = infer_segm_mask(segm_model, rgb_roi)
+            # visible_mask_roi = visible_mask[roi_xyxy[1]:roi_xyxy[3], roi_xyxy[0]:roi_xyxy[2]]
 
 
-            # get the uoais mask with the best iou
-            best_iou = 0
-            for uoais_mask in uoais_masks:
-                uoais_mask_roi = uoais_mask.copy()[roi_xyxy[1]:roi_xyxy[3], roi_xyxy[0]:roi_xyxy[2]]
-                iou = np.bitwise_and(uoais_mask_roi, visible_mask_roi).sum() / np.bitwise_or(uoais_mask_roi, visible_mask_roi).sum()
-                if iou > best_iou:
-                    best_iou = iou
-                    mask_roi = uoais_mask_roi
             # invert mask_roi
             # mask_roi = np.uint8(np.where(mask_roi==0, 255, 0))
 
@@ -128,35 +122,38 @@ for scene_id in tqdm(scene_ids):
             pyredner.set_use_gpu(torch.cuda.is_available())
             diff_renderer = DiffRenderer(width, height, cam_K, roi_xyxy, obj_id, H_c2m)
         
-            t_optimizer = torch.optim.SGD([diff_renderer.translation], lr=0.005, momentum=0.9)
-            r_optimizer = torch.optim.SGD([diff_renderer.euler_angles], lr=0.005, momentum=0.9)
+            t_optimizer = torch.optim.Adam([diff_renderer.translation], lr=0.05)
+            r_optimizer = torch.optim.Adam([diff_renderer.euler_angles], lr=0.05)
 
+            mask_roi_tensor = torch.tensor(segm_mask_roi, device = pyredner.get_device())
             rgb_roi_lcs = torch.tensor(np.power(skimage.img_as_float(rgb_roi[:, :, ::-1]).astype(np.float32), 2.2), device = pyredner.get_device())
             depth_roi_lcs =torch.tensor(np.power(skimage.img_as_float(depth_roi).astype(np.float32), 2.2), device = pyredner.get_device()).unsqueeze(-1)
-            mask_roi_lcs = torch.tensor(np.power(skimage.img_as_float(mask_roi).astype(np.float32), 2.2), device = pyredner.get_device()).unsqueeze(-1)
-            mask_roi_tensor = torch.tensor(mask_roi, device = pyredner.get_device()).unsqueeze(-1)
+            invalid_depth_mask = depth_roi_lcs == 0
+            # masking
+            # rgb_roi_lcs = rgb_roi_lcs * mask_roi_tensor
+            # depth_roi_lcs = depth_roi_lcs * mask_roi_tensor
             imgs, losses = [], []
             # Run 80 Adam iterations
             num_iters = 1000
             best_loss = 1e10
             best_iter = 0
+            n_valid_pixels = torch.sum(mask_roi_tensor)
             for t in range(num_iters):
                 t_optimizer.zero_grad()
                 r_optimizer.zero_grad()
 
                 render_imgs = diff_renderer.forward(['albedo', 'depth', 'mask'])
-                albedo_loss = torch.abs((render_imgs['albedo'] - rgb_roi_lcs)*mask_roi_tensor).mean()
-                depth_loss = torch.abs((render_imgs['depth'] - depth_roi_lcs)*mask_roi_tensor).mean()
-                mask_loss = torch.abs(render_imgs['mask'] - mask_roi_lcs).mean() 
+                albedo_loss = torch.abs((render_imgs['albedo'] - rgb_roi_lcs)).mean() * 0.01 / n_valid_pixels
+                depth_loss = torch.abs((render_imgs['depth'] - depth_roi_lcs)*invalid_depth_mask).mean() * 0.1 / n_valid_pixels
+                mask_loss = dice_loss(render_imgs['mask'], mask_roi_tensor[:, :, 0:1]) 
+                print("iter {}, albedo_loss: {}, depth_loss: {}, mask_loss: {}".format(t, albedo_loss, depth_loss, mask_loss))
                 loss = albedo_loss + depth_loss + mask_loss
-
 
                 loss.backward()
                 t_optimizer.step()
                 r_optimizer.step()
                 print(diff_renderer.translation, diff_renderer.euler_angles, loss.item())
                 # Plot the loss
-                print('iteration:', t, 'loss:', loss.item())
                 losses.append(loss.data.item())
                 if loss.data.item() < best_loss:
                     best_loss = loss.data.item()
@@ -166,17 +163,18 @@ for scene_id in tqdm(scene_ids):
                     best_translation = diff_renderer.translation.clone()
                     best_angles = diff_renderer.euler_angles.clone()
 
-                if t % 100 == 0 and t!=0:
+                if t % 100 == 0 :
                     print("best iter: {}".format(best_iter))
                     print("best loss: {}".format(best_loss))
                     print("best translation: {}".format(best_translation))
                     print("best angles: {}".format(best_angles))
-                    rgb_roi_render_vis = torch.pow(best_render_imgs['albedo'].clone(), 1.0/2.2).cpu().detach().numpy()
-                    rgb_roi_vis = rgb_roi[:, :, ::-1]
+                    rgb_roi_render_vis = torch.pow(best_render_imgs['albedo'].clone(), 1.0/2.2).cpu().detach().numpy()*255
+                    rgb_roi_vis = rgb_roi[:, :, ::-1] 
+                    print(np.max(rgb_roi_vis), np.max(rgb_roi_render_vis))
                     depth_roi_render_vis = torch.pow(best_render_imgs['depth'].clone(), 1.0/2.2).cpu().detach().numpy()
                     depth_roi_vis = np.expand_dims(depth_roi.copy(), -1)
-                    mask_roi_render_vis = torch.pow(best_render_imgs['mask'].clone(), 1.0/2.2).cpu().detach().numpy()
-                    mask_roi_vis = np.expand_dims(mask_roi.copy(), -1)
+                    mask_roi_render_vis = best_render_imgs['mask'].clone().cpu().detach().numpy()*255
+                    segm_mask_roi_vis = segm_mask_roi.copy()[:, :, 0:1] * 255
 
                     f, (ax_loss, ax_img_1, ax_img_2, ax_img_3, ax_img_4, ax_img_5, ax_img_6, ax_img_7, ax_img_8, ax_img_9, ax_img_10) = plt.subplots(1, 11)
                     ax_loss.plot(range(len(losses)), losses, label='loss')
@@ -187,9 +185,9 @@ for scene_id in tqdm(scene_ids):
                     ax_img_4.imshow((depth_roi_render_vis - depth_roi_vis).sum(-1))
                     ax_img_5.imshow(depth_roi_render_vis)
                     ax_img_6.imshow(depth_roi_vis)
-                    ax_img_7.imshow((mask_roi_render_vis - mask_roi_vis).sum(-1))
+                    ax_img_7.imshow((mask_roi_render_vis - segm_mask_roi_vis).sum(-1))
                     ax_img_8.imshow(mask_roi_render_vis)
-                    ax_img_9.imshow(mask_roi_vis)
+                    ax_img_9.imshow(segm_mask_roi_vis)
                     ax_img_10.imshow(np.uint8(np.where(mask_roi_render_vis==0, 0.5*rgb_roi_vis, rgb_roi_vis)))
 
 
